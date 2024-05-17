@@ -34,6 +34,8 @@ services:
       - postgres
     volumes:
       - ./e-commerce-backend/upload:/app/upload  # Mount the upload folder
+      - ./e-commerce-backend:/app  # Ensure the entire backend directory is mounted
+
 
   frontend:
     build: ./e-commerce-frontend

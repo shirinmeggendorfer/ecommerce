@@ -187,7 +187,7 @@ server.on('error', (error) => {
 
 // Image Storage Engine 
 const storage = multer.diskStorage({
-  destination: './images',
+  destination: './upload/images',
   filename: (req, file, cb) => {
     console.log(file);
     return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
@@ -198,7 +198,7 @@ const upload = multer({storage: storage})
 app.post("/upload", upload.single('product'), (req, res) => {
   res.json({
     success: 1,
-    image_url: `http://localhost:4001/upload/images/${req.file.filename}`
+    image_url: `${req.file.filename}`
   })
 })
 app.use('/images', express.static('upload/images'));
@@ -623,7 +623,7 @@ app.put("/updateproductadmin/:id", upload.single('image'), async (req, res) => {
     }
     const updatedData = {
       name: req.body.name,
-      image: req.file ? req.file.path : product.image,
+      image: product.image,
       category: req.body.category,
       new_price: req.body.new_price,
       old_price: req.body.old_price,
