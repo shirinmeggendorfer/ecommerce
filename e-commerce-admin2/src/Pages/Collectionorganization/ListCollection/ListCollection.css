@@ -1,0 +1,82 @@
+.list-collection-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background-color: #e0e0e0;
+  color: #333;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  margin: 30px auto;
+  max-width: 800px;
+  font-family: 'Roboto', sans-serif;
+}
+
+.list-collection-container h2 {
+  color: #555;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.list-collection-container .button-wrapper {
+  margin-bottom: 20px; /* Abstand unter dem Add New Button */
+}
+
+.list-collection-container select {
+  padding: 12px;
+  margin-bottom: 20px;
+  width: 220px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.list-collection-container select:focus {
+  border-color: #888;
+}
+
+.list-collection-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.list-collection-container li {
+  padding: 15px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 8px;
+  transition: box-shadow 0.3s;
+}
+
+.list-collection-container li:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.list-collection-container .button-group {
+  display: flex;
+  gap: 10px; /* Adjust gap as needed */
+}
+
+.list-collection-container button {
+  padding: 10px;
+  background-color: #888;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.list-collection-container button:hover {
+  background-color: #666;
+  transform: translateY(-2px);
+}

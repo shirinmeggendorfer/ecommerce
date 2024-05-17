@@ -1,0 +1,71 @@
+.product-details-container {
+  background: #FFFFFF;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  width: 90%;
+  max-width: 600px;
+  font-family: 'Roboto', sans-serif;
+}
+
+.product-details-container h2 {
+  margin-bottom: 20px;
+  text-align: center;
+  color: #333;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.product-details-container form {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-details-container label {
+  margin-bottom: 5px;
+  font-size: 14px;
+  color: #555;
+}
+
+.product-details-container input,
+.product-details-container select,
+.product-details-container button {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.product-details-container input,
+.product-details-container select {
+  border: 1px solid #ccc;
+  color: #555;
+  background-color: #ffffff;
+  transition: border-color 0.3s;
+}
+
+.product-details-container input:focus,
+.product-details-container select:focus {
+  border-color: #888;
+}
+
+.product-details-container button {
+  background-color: #666;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.product-details-container button[type="button"] {
+  background-color: #888;
+}
+
+.product-details-container button:hover {
+  transform: translateY(-2px);
+}

@@ -1,0 +1,57 @@
+version: '3.8'
+
+networks:
+  mynet:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:13
+    networks:
+      - mynet
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - ./e-commerce-backend/new_dump_db.sql:/docker-entrypoint-initdb.d/new_dump_db.sql
+
+  backend:
+    build: ./e-commerce-backend
+    networks:
+      - mynet
+    ports:
+      - "4001:4001"
+      - "5061:5061"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    depends_on:
+      - postgres
+    volumes:
+      - ./e-commerce-backend/upload:/app/upload  # Mount the upload folder
+
+  frontend:
+    build: ./e-commerce-frontend
+    networks:
+      - mynet
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  admin:
+    build: ./e-commerce-admin2
+    networks:
+      - mynet
+    ports:
+      - "3005:3005"
+    depends_on:
+      - backend
+    environment:
+      - PORT=3005
+      - REACT_APP_BACKEND_URL=http://backend:4001

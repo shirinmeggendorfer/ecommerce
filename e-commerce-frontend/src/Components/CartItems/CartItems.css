@@ -1,6 +1,12 @@
 .cartitems{
     margin: 100px 10%;
 }
+.cartitems-format img {
+    width: 50px; /* Kontrolliert die Breite des Bildes */
+    height: auto; /* Behält das Seitenverhältnis des Bildes bei */
+    margin-right: 10px; /* Abstand rechts vom Bild */
+}
+
 .cartitems hr{
     height: 2px;
     background: #e2e2e2;
