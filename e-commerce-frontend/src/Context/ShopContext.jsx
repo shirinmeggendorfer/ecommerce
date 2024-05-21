@@ -1,5 +1,6 @@
+// src/Context/ShopContext.js
 import React, { createContext, useEffect, useState } from "react";
-import { useNavigate } from 'react-router-dom'; // <-- Hinzufügen
+import { useNavigate } from 'react-router-dom';
 
 export const ShopContext = createContext(null);
 
@@ -7,14 +8,14 @@ const ShopContextProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState({});
   const [totalCartItems, setTotalCartItems] = useState(0);
-  const navigate = useNavigate(); // <-- Hinzufügen
+  const navigate = useNavigate();
 
   const token = localStorage.getItem("auth-token");
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('http://localhost:4001/allproducts');
+        const res = await fetch('http://localhost:4000/allproducts');
         if (res.ok) {
           const data = await res.json();
           setProducts(data);
@@ -32,7 +33,7 @@ const ShopContextProvider = ({ children }) => {
     const fetchCart = async () => {
       if (token) {
         try {
-          const res = await fetch('http://localhost:4001/getcart', {
+          const res = await fetch('http://localhost:4000/getcart', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -56,12 +57,12 @@ const ShopContextProvider = ({ children }) => {
   }, [token]);
 
   const addToCart = async (itemId, size) => {
-    if (!token) { // <-- Hinzufügen
-      navigate('/login'); // <-- Hinzufügen
-      return; // <-- Hinzufügen
+    if (!token) {
+      navigate('/login');
+      return;
     }
     try {
-      const response = await fetch('http://localhost:4001/addtocart', {
+      const response = await fetch('http://localhost:4000/addtocart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ const ShopContextProvider = ({ children }) => {
   const removeFromCart = async (itemId, size, removeAll = false) => {
     if (token) {
       try {
-        const response = await fetch('http://localhost:4001/removefromcart', {
+        const response = await fetch('http://localhost:4000/removefromcart', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -124,11 +125,16 @@ const ShopContextProvider = ({ children }) => {
     }
   };
 
-  const getTotalCartItems = () => token ? totalCartItems : 0; // <-- Ändern
+  const getTotalCartItems = () => token ? totalCartItems : 0;
+  
+  const clearCart = () => {
+    setTotalCartItems(0);
+  };
 
-  const contextValue = { products, cartItems, addToCart, removeFromCart, getTotalCartItems, setCartItems };
+  const contextValue = { products, cartItems, addToCart, removeFromCart, getTotalCartItems, clearCart, setCartItems };
 
   return <ShopContext.Provider value={contextValue}>{children}</ShopContext.Provider>;
 };
 
+export { ShopContextProvider as ShopProvider };
 export default ShopContextProvider;

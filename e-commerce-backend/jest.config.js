@@ -1,9 +1,25 @@
 module.exports = {
   verbose: true,
-  testEnvironment: "node",
+  detectOpenHandles: true,
+  testEnvironment: 'node',
   transform: {
-    "^.+\\.jsx?$": "babel-jest"
+    '^.+\\.js$': 'babel-jest'
   },
-  moduleFileExtensions: ["js", "jsx"],
-  setupFiles: ["<rootDir>/setupTests.js"]
+  transformIgnorePatterns: [
+    '/node_modules/'
+  ],
+  coverageDirectory: 'coverage',
+  collectCoverage: true,
+  collectCoverageFrom: [
+    '**/index.js', 
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 75,
+      functions: 75,
+      lines: 75,
+      statements: 75,
+    },
+  },
 };
+

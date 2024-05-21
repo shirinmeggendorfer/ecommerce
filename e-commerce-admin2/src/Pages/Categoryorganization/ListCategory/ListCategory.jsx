@@ -11,7 +11,7 @@ const ListCategory = () => {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const url = 'http://localhost:4001/admincategories';
+      const url = 'http://localhost:4000/admincategories';
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
@@ -34,7 +34,7 @@ const ListCategory = () => {
       alert('Category name cannot be empty.');
       return;
     }
-    const response = await fetch(`http://localhost:4001/adminupdatecategory/${id}`, {
+    const response = await fetch(`http://localhost:4000/adminupdatecategory/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -49,7 +49,7 @@ const ListCategory = () => {
   };
 
   const handleDeleteCategory = async (id) => {
-    const response = await fetch(`http://localhost:4001/admindeletecategory/${id}`, {
+    const response = await fetch(`http://localhost:4000/admindeletecategory/${id}`, {
       method: 'DELETE'
     });
     if (response.ok) {

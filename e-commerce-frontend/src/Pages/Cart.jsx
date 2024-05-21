@@ -1,10 +1,37 @@
-import React, { useContext } from 'react';
+// src/Pages/Cart.jsx
+import React, { useContext, useState } from 'react';
 import { ShopContext } from '../Context/ShopContext';
-import "./CSS/Cart.css";  // Stelle sicher, dass der Pfad korrekt ist
-import { Link } from 'react-router-dom';
+import './CSS/Cart.css';
+import { Link, useNavigate } from 'react-router-dom';
+import FakePaymentButton from '../Components/FakePaymentButton';
+import Loading from '../Components/Loading/Loading.jsx';
 
 const Cart = () => {
-  const { products, cartItems, addToCart, removeFromCart } = useContext(ShopContext);
+  const { products, cartItems, addToCart, removeFromCart, setCartItems , clearCart} = useContext(ShopContext);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const totalAmount = Object.keys(cartItems).reduce((total, key) => {
+    const [id] = key.split('-');
+    const quantity = cartItems[key];
+    const product = products.find(p => p.id === parseInt(id));
+    if (product) {
+      const price = parseFloat(product.new_price);
+      return total + (isNaN(price) ? 0 : price * quantity);
+    }
+    return total;
+  }, 0).toFixed(2);
+
+  const handleSuccessPayment = (details) => {
+    console.log('Payment Success:', details);
+    setLoading(true);
+    setCartItems({}); // Leert den Warenkorb
+    clearCart();
+    setTimeout(() => {
+      setLoading(false);
+      navigate('/thank-you');
+    }, 2000); // Simulieren des Ladevorgangs für 2 Sekunden vor der Weiterleitung
+  };
 
   return (
     <div className="cart-container">
@@ -20,7 +47,7 @@ const Cart = () => {
             return (
               <div key={key} className="cart-item">
                 <Link to={`/product/${product.id}`} className="cart-item-image" style={{ textDecoration: 'none' }}>
-                  <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4001/images/${product.image}`} alt={product.name} />
+                  <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4000/images/${product.image}`} alt={product.name} />
                 </Link>
                 <div className="cart-item-details">
                   <p>{product.name}</p>
@@ -41,6 +68,12 @@ const Cart = () => {
           }
         })}
       </div>
+      <hr />
+      <div className="total-amount">
+        <h2>Total Amount: ${totalAmount}</h2>
+      </div>
+      <FakePaymentButton amount={totalAmount} onSuccess={handleSuccessPayment} />
+      {loading && <div className="loading-overlay"><Loading /></div>}
     </div>
   );
 };

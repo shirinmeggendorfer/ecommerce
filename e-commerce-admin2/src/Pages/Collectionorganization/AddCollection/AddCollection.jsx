@@ -11,7 +11,7 @@ const AddCollection = ({ closeForm, onCollectionAdded }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:4001/adminaddcollection', {
+      const response = await fetch('http://localhost:4000/adminaddcollection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

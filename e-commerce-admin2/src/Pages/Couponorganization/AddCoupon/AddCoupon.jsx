@@ -1,46 +1,64 @@
-import React, { useState } from 'react';
-import './AddCoupon.css';
+import React, { useState, useEffect } from 'react';
 
 const AddCoupon = ({ closeForm, onCouponAdded }) => {
-  const [couponName, setCouponName] = useState('');
-  const [amount, setAmount] = useState('');
-  const [available, setAvailable] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [name, setName] = useState('');
+  const [discount, setDiscount] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [collectionId, setCollectionId] = useState('');
+  const [image, setImage] = useState(null);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    if (type === 'checkbox') {
-      setAvailable(checked);
-    } else if (name === 'name') {
-      setCouponName(value);
-    } else if (name === 'amount') {
-      setAmount(value);
-    }
-  };
+  useEffect(() => {
+    fetch('http://localhost:4000/admincategories')
+      .then(res => res.json())
+      .then(data => setCategories(data));
+
+    fetch('http://localhost:4000/admincollections')
+      .then(res => res.json())
+      .then(data => setCollections(data));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await fetch('http://localhost:4001/adminaddcoupon', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: couponName, amount, available })
-      });
-      const data = await response.json();
-      if (data.success) {
-        alert('Coupon added successfully');
-        setCouponName(''); // Reset form
-        setAmount('');
-        setAvailable(false);
-        if (closeForm) closeForm(); // Close form if the function is provided
-        if (onCouponAdded) onCouponAdded(); // Refresh coupons if the function is provided
-      } else {
-        alert('Failed to add coupon');
-      }
-    } catch (error) {
-      alert('Error submitting coupon');
-      console.error('Error:', error);
+
+    const formData = new FormData();
+    formData.append('image', image);
+
+    const uploadRes = await fetch('http://localhost:4000/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const uploadData = await uploadRes.json();
+
+    if (!uploadData.success) {
+      alert('Failed to upload image');
+      return;
+    }
+
+    const couponData = {
+      name,
+      discount,
+      category_id: categoryId,
+      collection_id: collectionId,
+      image_url: uploadData.image_url
+    };
+
+    const res = await fetch('http://localhost:4000/addcoupon', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(couponData)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      alert('Coupon added successfully');
+      closeForm();
+      onCouponAdded();
+    } else {
+      alert('Failed to add coupon');
     }
   };
 
@@ -50,29 +68,49 @@ const AddCoupon = ({ closeForm, onCouponAdded }) => {
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          name="name"
-          value={couponName}
-          onChange={handleChange}
           placeholder="Coupon Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           required
         />
         <input
           type="number"
-          name="amount"
-          value={amount}
-          onChange={handleChange}
-          placeholder="Discount Amount (%)"
+          placeholder="Discount"
+          value={discount}
+          onChange={(e) => setDiscount(e.target.value)}
           required
         />
-        <label>
-          Available:
-          <input
-            type="checkbox"
-            name="available"
-            checked={available}
-            onChange={handleChange}
-          />
-        </label>
+        <label htmlFor="category_id">Category</label>
+        <select
+          id="category_id"
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          required
+        >
+          <option value="">Select Category</option>
+          {categories.map(category => (
+            <option key={category.id} value={category.id}>{category.name}</option>
+          ))}
+        </select>
+        <label htmlFor="collection_id">Collection</label>
+        <select
+          id="collection_id"
+          value={collectionId}
+          onChange={(e) => setCollectionId(e.target.value)}
+          required
+        >
+          <option value="">Select Collection</option>
+          {collections.map(collection => (
+            <option key={collection.id} value={collection.id}>{collection.name}</option>
+          ))}
+        </select>
+        <label htmlFor="coupon-image">Image</label>
+        <input
+          type="file"
+          id="coupon-image"
+          onChange={(e) => setImage(e.target.files[0])}
+          required
+        />
         <button type="submit">Submit</button>
       </form>
     </div>

@@ -1,6 +1,6 @@
 const request = require('supertest');
 const nock = require('nock');
-const jestServerUrl = 'http://localhost:5061'; // Die URL Ihres Jest-Servers
+const jestServerUrl = 'http://localhost:5063'; // Die URL Ihres Jest-Servers
 
 describe('Search functionality', () => {
   beforeAll(() => {

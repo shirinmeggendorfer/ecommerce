@@ -7,7 +7,7 @@ const ShopContextProvider = ({ children }) => {
 
 
   const fetchAllProducts = async () => {
-    const res = await fetch('http://localhost:4001/allproducts');
+    const res = await fetch('http://localhost:4000/allproducts');
     const data = await res.json();
     setProducts(data);
   };
@@ -15,7 +15,7 @@ const ShopContextProvider = ({ children }) => {
 
   const addOrUpdateProduct = async (product) => {
     const method = product.id ? 'PUT' : 'POST';
-    const url = product.id ? `http://localhost:4001/products/${product.id}` : 'http://localhost:4001/addproduct';
+    const url = product.id ? `http://localhost:4000/products/${product.id}` : 'http://localhost:4000/addproduct';
 
     await fetch(url, {
       method: method,
@@ -36,7 +36,7 @@ const ShopContextProvider = ({ children }) => {
   };
 
   const removeProduct = async (productId) => {
-    await fetch(`http://localhost:4001/removeproduct/${productId}`, {
+    await fetch(`http://localhost:4000/removeproduct/${productId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

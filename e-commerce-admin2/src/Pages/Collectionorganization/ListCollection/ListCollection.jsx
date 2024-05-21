@@ -11,7 +11,7 @@ const ListCollection = () => {
 
   const fetchCollections = useCallback(async () => {
     try {
-      const url = 'http://localhost:4001/admincollections';
+      const url = 'http://localhost:4000/admincollections';
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch collections');
@@ -34,7 +34,7 @@ const ListCollection = () => {
       alert('Collection name cannot be empty.');
       return;
     }
-    const response = await fetch(`http://localhost:4001/adminupdatecollection/${id}`, {
+    const response = await fetch(`http://localhost:4000/adminupdatecollection/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -49,7 +49,7 @@ const ListCollection = () => {
   };
 
   const handleDeleteCollection = async (id) => {
-    const response = await fetch(`http://localhost:4001/admindeletecollection/${id}`, {
+    const response = await fetch(`http://localhost:4000/admindeletecollection/${id}`, {
       method: 'DELETE'
     });
     if (response.ok) {

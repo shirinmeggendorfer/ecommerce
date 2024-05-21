@@ -1,35 +1,52 @@
-import React, { useState } from 'react';
-import './AddCategory.css';
+import React, { useState, useEffect } from 'react';
 
-const AddCategory = ({ closeForm, onCategoryAdded }) => {
+const AddCategory = () => {
+  const [categories, setCategories] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [categoryName, setCategoryName] = useState('');
 
-  const handleChange = (e) => {
-    setCategoryName(e.target.value);
-  };
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('http://localhost:4000/admincategories');
+        const data = await res.json();
+        setCategories(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setCategories([]);
+      }
+    };
+
+    const fetchCollections = async () => {
+      try {
+        const res = await fetch('http://localhost:4000/admincollections');
+        const data = await res.json();
+        setCollections(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setCollections([]);
+      }
+    };
+
+    fetchCategories();
+    fetchCollections();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:4001/adminaddcategory', {
+      const response = await fetch('/addCategory', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: categoryName })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: categoryName }),
       });
-      const data = await response.json();
-      if (data.success) {
+      const result = await response.json();
+      if (result.message === 'Category added successfully') {
         alert('Category added successfully');
-        setCategoryName(''); // Zurücksetzen des Formulars
-        if (closeForm) closeForm(); // Schließen des Formulars, wenn die Funktion übergeben wurde
-        if (onCategoryAdded) onCategoryAdded(); // Neuladen der Kategorien
       } else {
         alert('Failed to add category');
       }
     } catch (error) {
-      alert('Error submitting category');
-      console.error('Error:', error);
+      alert('Failed to add category');
+      console.error('Failed to add category:', error);
     }
   };
 
@@ -38,12 +55,12 @@ const AddCategory = ({ closeForm, onCategoryAdded }) => {
       <h2>Add Category</h2>
       <form onSubmit={handleSubmit}>
         <input
-          type="text"
           name="name"
-          value={categoryName}
-          onChange={handleChange}
           placeholder="Category Name"
           required
+          type="text"
+          value={categoryName}
+          onChange={(e) => setCategoryName(e.target.value)}
         />
         <button type="submit">Submit</button>
       </form>

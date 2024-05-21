@@ -116,6 +116,7 @@ INSERT INTO public.products (name, image, category_id, collection_id, new_price,
 INSERT INTO public.users ( name, email, password, date, is_admin) VALUES
 ('TestUser', 'test@test.com', 'test1234', '2024-05-06 15:29:57.132183', false),
 ('admin', 'admin@admin.com', 'admin',  '2024-05-06 15:29:57.13414', true),
+('beispiel', 'beispiel3@beispiel.com', 'beispiel',  '2024-05-06 15:29:57.13414', true),
 ('beispiel', 'beispiel@beispiel.com', 'beispiel',  '2024-05-06 15:29:57.13414', true);
 
 

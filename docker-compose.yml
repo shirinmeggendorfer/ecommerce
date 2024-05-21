@@ -23,13 +23,15 @@ services:
     networks:
       - mynet
     ports:
-      - "4001:4001"
-      - "5061:5061"
+      - "4000:4000"
+      - "5063:5063"
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
+      PORT: 4000
+      JEST_PORT: 4001
     depends_on:
       - postgres
     volumes:
@@ -56,4 +58,4 @@ services:
       - backend
     environment:
       - PORT=3005
-      - REACT_APP_BACKEND_URL=http://backend:4001
+      - REACT_APP_BACKEND_URL=http://backend:4000

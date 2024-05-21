@@ -1,15 +1,15 @@
+// src/index.js
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
+import ReactDOM from 'react-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
-import ShopContextProvider from './Context/ShopContext';
-import { BrowserRouter } from 'react-router-dom';
+import './index.css';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <BrowserRouter>
-    <ShopContextProvider>
+ReactDOM.render(
+  <React.StrictMode>
+    <Router>
       <App />
-    </ShopContextProvider>
-  </BrowserRouter>
+    </Router>
+  </React.StrictMode>,
+  document.getElementById('root')
 );

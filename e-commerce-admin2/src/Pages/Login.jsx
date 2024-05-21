@@ -8,7 +8,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    const response = await fetch('http://localhost:4001/adminlogin', { // Use admin login endpoint
+    const response = await fetch('http://localhost:4000/adminlogin', { // Use admin login endpoint
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -18,7 +18,7 @@ const Login = () => {
     const data = await response.json();
     if (data.success) {
       localStorage.setItem('auth-token', data.token);
-      const userResponse = await fetch('http://localhost:4001/me', {
+      const userResponse = await fetch('http://localhost:4000/me', {
         headers: {
           'Authorization': `Bearer ${data.token}`,
         },

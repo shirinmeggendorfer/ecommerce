@@ -13,7 +13,7 @@ const ListCoupon = () => {
 
   const fetchCoupons = useCallback(async () => {
     try {
-      const url = 'http://localhost:4001/admincoupons';
+      const url = 'http://localhost:4000/admincoupons';
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch coupons');
@@ -36,7 +36,7 @@ const ListCoupon = () => {
       alert('Coupon name and amount cannot be empty.');
       return;
     }
-    const response = await fetch(`http://localhost:4001/adminupdatecoupon/${id}`, {
+    const response = await fetch(`http://localhost:4000/adminupdatecoupon/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -53,7 +53,7 @@ const ListCoupon = () => {
   };
 
   const handleDeleteCoupon = async (id) => {
-    const response = await fetch(`http://localhost:4001/admindeletecoupon/${id}`, {
+    const response = await fetch(`http://localhost:4000/admindeletecoupon/${id}`, {
       method: 'DELETE'
     });
     if (response.ok) {

@@ -1,4 +1,5 @@
-import React, { useContext, useRef, useState } from 'react';
+// src/Components/Navbar/Navbar.jsx
+import React, { useContext, useRef, useState, useEffect } from 'react';
 import './Navbar.css';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../Assets/logo.png';
@@ -8,7 +9,7 @@ import nav_dropdown from '../Assets/nav_dropdown.png';
 
 const Navbar = () => {
   let [menu, setMenu] = useState("shop");
-  const { getTotalCartItems, setCartItems } = useContext(ShopContext);
+  const { getTotalCartItems, setCartItems, cartItems } = useContext(ShopContext);
   const menuRef = useRef();
   const navigate = useNavigate();
 
@@ -18,7 +19,7 @@ const Navbar = () => {
   };
 
   const handleLogout = async () => {
-    const response = await fetch('http://localhost:4001/logout', {
+    const response = await fetch('http://localhost:4000/logout', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,6 +36,10 @@ const Navbar = () => {
       navigate("/");
     }
   };
+
+  useEffect(() => {
+    // Monitor cartItems for changes to update cart count
+  }, [cartItems]);
 
   return (
     <div className='nav'>

@@ -1,47 +1,141 @@
-import React, { useEffect, useState } from "react";
-import "./CSS/ShopCategory.css";
-import dropdown_icon from '../Components/Assets/dropdown_icon.png'
-import Item from "../Components/Item/Item";
-import { Link } from "react-router-dom";
+// src/Context/ShopContext.js
+import React, { createContext, useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 
-const ShopCategory = (props) => {
+export const ShopContext = createContext(null);
 
-  const [allproducts, setAllProducts] = useState([]);
+const ShopContextProvider = ({ children }) => {
+  const [products, setProducts] = useState([]);
+  const [cartItems, setCartItems] = useState({});
+  const [totalCartItems, setTotalCartItems] = useState(0);
+  const navigate = useNavigate();
 
-  const fetchInfo = () => { 
-    fetch('http://localhost:4001/allproducts') 
-            .then((res) => res.json()) 
-            .then((data) => setAllProducts(data))
+  const token = localStorage.getItem("auth-token");
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('http://localhost:4000/allproducts');
+        if (res.ok) {
+          const data = await res.json();
+          setProducts(data);
+        } else {
+          throw new Error('Failed to fetch products');
+        }
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    const fetchCart = async () => {
+      if (token) {
+        try {
+          const res = await fetch('http://localhost:4000/getcart', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setCartItems(data);
+            setTotalCartItems(Object.values(data).reduce((total, qty) => total + qty, 0));
+          } else {
+            throw new Error('Failed to fetch cart');
+          }
+        } catch (error) {
+          console.error('Failed to fetch cart:', error);
+          setCartItems({});
+        }
+      }
+    };
+    fetchCart();
+  }, [token]);
+
+  const addToCart = async (itemId, size) => {
+    if (!token) {
+      navigate('/login');
+      return;
     }
+    try {
+      const response = await fetch('http://localhost:4000/addtocart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ itemId, size })
+      });
+      if (response.ok) {
+        setCartItems(prevItems => {
+          const itemKey = `${itemId}-${size}`;
+          const newItems = { ...prevItems, [itemKey]: (prevItems[itemKey] || 0) + 1 };
+          setTotalCartItems(Object.values(newItems).reduce((total, qty) => total + qty, 0));
+          return newItems;
+        });
+      } else {
+        throw new Error('Failed to add item to cart');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
+  };
 
-    useEffect(() => {
-      fetchInfo();
-    }, [])
-    
-  return (
-    <div className="shopcategory">
-      <img src={props.banner} className="shopcategory-banner" alt="" />
-      <div className="shopcategory-indexSort">
-        <p><span>Showing 1 - 12</span> out of 54 Products</p>
-        <div className="shopcategory-sort">Sort by  <img src={dropdown_icon} alt="" /></div>
-      </div>
-      <div className="shopcategory-products">
-        {allproducts.map((item,i) => {
-            if(props.category===item.category)
-            {
-              return <Item id={item.id} key={i} name={item.name} image={item.image}  new_price={item.new_price} old_price={item.old_price}/>;
+
+
+  const removeFromCart = async (itemId, size, removeAll = false) => {
+    if (token) {
+      try {
+        const response = await fetch('http://localhost:4000/removefromcart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ itemId, size, removeAll })
+        });
+        if (response.ok) {
+          setCartItems(prev => {
+            const itemKey = `${itemId}-${size}`;
+            if (removeAll) {
+              const { [itemKey]: removed, ...rest } = prev;
+              setTotalCartItems(Object.values(rest).reduce((total, qty) => total + qty, 0));
+              return rest;
+            } else {
+              const newQuantity = (prev[itemKey] || 1) - 1;
+              if (newQuantity > 0) {
+                const newItems = { ...prev, [itemKey]: newQuantity };
+                setTotalCartItems(Object.values(newItems).reduce((total, qty) => total + qty, 0));
+                return newItems;
+              } else {
+                const { [itemKey]: removed, ...rest } = prev;
+                setTotalCartItems(Object.values(rest).reduce((total, qty) => total + qty, 0));
+                return rest;
+              }
             }
-            else
-            {
-              return null;
-            }
-        })}
-      </div>
-      <div className="shopcategory-loadmore">
-      <Link to='/' style={{ textDecoration: 'none' }}>Explore More</Link>
-      </div>
-    </div>
-  );
+          });
+        } else {
+          throw new Error('Failed to remove item from cart');
+        }
+      } catch (error) {
+        console.error('Error removing from cart:', error);
+      }
+    }
+  };
+  const clearCart = () => {
+    setCartItems({});
+  };
+
+  const getTotalCartItems = () => token ? totalCartItems : 0;
+
+  const contextValue = { products, cartItems, addToCart,clearCart, removeFromCart, getTotalCartItems, setCartItems };
+
+  return <ShopContext.Provider value={contextValue}>{children}</ShopContext.Provider>;
 };
 
-export default ShopCategory;
+export { ShopContextProvider as ShopProvider };
+export default ShopContextProvider;

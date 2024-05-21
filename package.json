@@ -1,0 +1,63 @@
+{
+    "name": "e-commerce",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+      "start": "node server.js", 
+      "build": "react-scripts build", 
+      "test": "jest --coverage", 
+      "test:watch": "jest --watch", 
+      "lint": "eslint .", 
+      "format": "prettier --write .", 
+      "start:frontend": "react-scripts start",
+      "start:admin": "react-scripts start --config config/webpack.admin.config.js" 
+    },
+    "dependencies": {
+      "react": "^18.0.0",
+      "react-dom": "^18.0.0",
+     
+    },
+    "devDependencies": {
+      "jest": "^28.0.0",
+      "react-testing-library": "^13.0.0",
+      "babel-jest": "^28.0.0",
+      "eslint": "^8.0.0",
+      "prettier": "^2.0.0",
+     
+    },
+    "jest": {
+      "collectCoverage": true,
+      "collectCoverageFrom": [
+        "adminfrontend/src/**/*.{js,jsx}",
+        "backend/src/**/*.{js,jsx}",
+        "userfrontend/src/**/*.{js,jsx}",
+        "!**/node_modules/**",
+        "!**/vendor/**"
+      ],
+      "coverageThreshold": {
+        "global": {
+          "branches": 75,
+          "functions": 75,
+          "lines": 75,
+          "statements": 75
+        }
+      },
+      "testEnvironment": "jsdom"
+    },
+    "eslintConfig": {
+      "extends": [
+        "react-app",
+        "eslint:recommended",
+        "plugin:react/recommended",
+        "plugin:jsx-a11y/recommended",
+        "plugin:prettier/recommended"
+      ],
+  
+    },
+    "prettier": {
+      "semi": true,
+      "singleQuote": true,
+      "printWidth": 80
+    }
+  }
+  

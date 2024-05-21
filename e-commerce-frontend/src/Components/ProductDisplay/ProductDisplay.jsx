@@ -20,17 +20,18 @@ const ProductDisplay = ({ product }) => {
       <div className="productdisplay-left">
         <div className="productdisplay-img-list">
           <Link to={`/product/${product.id}`} style={{ textDecoration: 'none' }}>
-            <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4001/images/${product.image}`} alt="products" />
+            <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4000/images/${product.image}`} alt="products" />
           </Link>
         </div>
         <div className="productdisplay-img">
           <Link to={`/product/${product.id}`} style={{ textDecoration: 'none' }}>
-            <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4001/images/${product.image}`} alt="products" />
+            <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4000/images/${product.image}`} alt="products" />
           </Link>
         </div>
       </div>
       <div className="productdisplay-right">
         <h1>{product.name}</h1>
+        <p>{product.category}</p>
         <div className="productdisplay-right-size">
           <h2>Select Size</h2>
           <div className="productdisplay-right-sizes">

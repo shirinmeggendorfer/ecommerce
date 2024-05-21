@@ -1,117 +1,126 @@
-import React, { useEffect, useState } from 'react';
-import './ProductDetails.css';
+import React, { useState, useEffect } from 'react';
 
-const ProductDetails = ({ productId, close }) => {
-  const [product, setProduct] = useState({
-    name: '',
-    category_id: '',
-    collection_id: '',
-    new_price: '',
-    old_price: '',
-    image: null
-  });
+const ProductDetails = ({ productId }) => {
+  const [product, setProduct] = useState(null);
   const [categories, setCategories] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCategoriesAndCollections = async () => {
+    const fetchData = async () => {
       try {
-        const catRes = await fetch('http://localhost:4001/admincategories');
-        const colRes = await fetch('http://localhost:4001/admincollections');
-        if (!catRes.ok || !colRes.ok) {
-          throw new Error('Failed to fetch');
-        }
-        const catData = await catRes.json();
-        const colData = await colRes.json();
-        setCategories(catData);
-        setCollections(colData);
+        const [productRes, categoriesRes, collectionsRes] = await Promise.all([
+          fetch(`http://localhost:4000/products/${productId}`),
+          fetch('http://localhost:4000/categories'),
+          fetch('http://localhost:4000/collections')
+        ]);
+
+        const productData = await productRes.json();
+        const categoriesData = await categoriesRes.json();
+        const collectionsData = await collectionsRes.json();
+
+        setProduct(productData);
+        setCategories(categoriesData);
+        setCollections(collectionsData);
+        setLoading(false);
       } catch (error) {
-        console.error('Failed to load categories or collections:', error);
+        console.error('Failed to load data:', error);
       }
     };
 
-    const fetchProduct = async () => {
-      setLoading(true);
-      const response = await fetch(`http://localhost:4001/productadmin/${productId}`);
-      const data = await response.json();
-      setProduct({ ...data, category_id: data.category_id, collection_id: data.collection_id });
-      setLoading(false);
-    };
+    fetchData();
+  }, [productId]);
 
-    fetchCategoriesAndCollections();
-    fetchProduct();
-  }, [productId]);  // Ensuring both fetches are called when productId changes.
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProduct(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e) => {
-    setProduct(prev => ({ ...prev, image: e.target.files[0] }));
+    setProduct((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append('name', product.name);
-    formData.append('category_id', product.category_id);
-    formData.append('collection_id', product.collection_id);
-    formData.append('new_price', product.new_price);
-    formData.append('old_price', product.old_price);
-    if (product.image) formData.append('image', product.image);
-
-    const response = await fetch(`http://localhost:4001/updateproductadmin/${productId}`, {
-      method: 'PUT',
-      body: formData
-    });
-    const data = await response.json();
-    if (data.success) {
-      alert('Product updated successfully!');
-      close();
-    } else {
-      alert('Failed to update product.');
+    try {
+      await fetch(`http://localhost:4000/products/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(product)
+      });
+      alert('Product updated successfully');
+    } catch (error) {
+      alert('Failed to update product');
     }
   };
-
-  if (loading) return <p>Loading...</p>;
-  if (!product) return null;
 
   return (
     <div className="product-details-container">
       <h2>Edit Product</h2>
       <form onSubmit={handleSubmit}>
         <label htmlFor="name">Name</label>
-        <input type="text" name="name" value={product.name} onChange={handleChange} placeholder="Product Name" />
-
+        <input
+          id="name"
+          name="name"
+          placeholder="Product Name"
+          type="text"
+          value={product.name}
+          onChange={handleChange}
+        />
         <label htmlFor="category_id">Category</label>
-        <select name="category_id" value={product.category_id} onChange={handleChange}>
+        <select
+          id="category_id"
+          name="category_id"
+          value={product.category_id}
+          onChange={handleChange}
+        >
           <option value="">Select Category</option>
-          {categories.map(cat => (
-            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
           ))}
         </select>
-
         <label htmlFor="collection_id">Collection</label>
-        <select name="collection_id" value={product.collection_id} onChange={handleChange}>
+        <select
+          id="collection_id"
+          name="collection_id"
+          value={product.collection_id}
+          onChange={handleChange}
+        >
           <option value="">Select Collection</option>
-          {collections.map(col => (
-            <option key={col.id} value={col.id}>{col.name}</option>
+          {collections.map((collection) => (
+            <option key={collection.id} value={collection.id}>
+              {collection.name}
+            </option>
           ))}
         </select>
-
         <label htmlFor="new_price">New Price</label>
-        <input type="number" name="new_price" value={product.new_price} onChange={handleChange} placeholder="New Price" />
-
+        <input
+          id="new_price"
+          name="new_price"
+          placeholder="New Price"
+          type="number"
+          value={product.new_price}
+          onChange={handleChange}
+        />
         <label htmlFor="old_price">Old Price</label>
-        <input type="number" name="old_price" value={product.old_price} onChange={handleChange} placeholder="Old Price" />
-
+        <input
+          id="old_price"
+          name="old_price"
+          placeholder="Old Price"
+          type="number"
+          value={product.old_price}
+          onChange={handleChange}
+        />
         <label htmlFor="image">Image</label>
-        <input type="file" onChange={handleFileChange} />
-
+        <input
+          id="image"
+          name="image"
+          type="file"
+        />
         <button type="submit">Update Product</button>
-        <button type="button" onClick={close}>Close</button>
+        <button type="button" onClick={() => alert('Form closed')}>Close</button>
       </form>
     </div>
   );

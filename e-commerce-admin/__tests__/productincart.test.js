@@ -1,5 +1,5 @@
 const request = require('supertest');
-const jestServerUrl = 'http://localhost:5061';
+const jestServerUrl = 'http://localhost:5063';
 
 describe('Product in Cart Endpoint', () => {
   it('should add a product to the cart and return status 200', async () => {

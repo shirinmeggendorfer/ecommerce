@@ -1,9 +1,8 @@
-const expressPort = 4001;
-const jestPort = 5061;
+const expressPort = process.env.PORT || 4000;
+const jestPort = process.env.JEST_PORT || 5064;
 const express = require("express");
 const app = express();
 const router = express.Router();
-//const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
@@ -19,15 +18,25 @@ app.use(cors({
 
 const { Sequelize, DataTypes } = require('sequelize');
 
+const isTestEnvironment = process.env.NODE_ENV === 'test';
+
 // POSTGRES DB VERBINDUNG
-const sequelize = new Sequelize({
-  dialect: 'postgres',
-  host: process.env.POSTGRES_HOST,
-  port: 5432,
-  username: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
-  database: process.env.POSTGRES_DB
-});
+const sequelize = new Sequelize(
+  isTestEnvironment
+    ? {
+        dialect: 'sqlite',
+        storage: ':memory:',
+        logging: false
+      }
+    : {
+        dialect: 'postgres',
+        host: process.env.POSTGRES_HOST,
+        port: 5432,
+        username: process.env.POSTGRES_USER,
+        password: process.env.POSTGRES_PASSWORD,
+        database: process.env.POSTGRES_DB
+      }
+);
 
 // MODELS
 const Category = sequelize.define('Category', {
@@ -161,28 +170,29 @@ const User = sequelize.define('User', {
 });
 
 
+
 sequelize.authenticate()
   .then(() => {
-    console.log('Erfolgreich mit der PostgreSQL-Datenbank verbunden!');
+    console.log('Erfolgreich mit der Datenbank verbunden!');
   })
   .catch(err => {
-    console.error('Fehler bei der Verbindung zur PostgreSQL-Datenbank:', err);
+    console.error('Fehler bei der Verbindung zur Datenbank:', err);
   });
 
-const server = app.listen(expressPort, () => {
-  console.log(`Server Running on port ${expressPort}`);
+const server = app.listen(isTestEnvironment ? jestPort : expressPort, () => {
+  console.log(`Server Running on port ${isTestEnvironment ? jestPort : expressPort}`);
 });
 
 server.on('error', (error) => {
   if (error.code === 'EADDRINUSE') {
-    console.error(`Port ${expressPort} is already in use`);
+    console.error(`Port ${isTestEnvironment ? jestPort : expressPort} is already in use`);
     process.exit(1);
   } else {
     console.error('Server error:', error);
   }
 });
 
-
+module.exports = { app, sequelize, Category, Collection, Product, Coupon, User };
 
 
 // Image Storage Engine 
@@ -272,6 +282,20 @@ app.get('/me', fetchuser, async (req, res) => {
   }
 });
 
+app.put('/users/:id', async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    user.is_admin = true;
+    await user.save();
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 
 // FEATURE #1 : REGISTRIERUNG
 app.post('/signup', async (req, res) => {
@@ -289,11 +313,13 @@ app.post('/signup', async (req, res) => {
 
     const tokenData = { user: { id: newUser.id } };
     const token = jwt.sign(tokenData, 'secret_ecom');
-    res.status(200).json({ success: true, token }); // Antwort geändert
+    res.status(200).json({ success: true, token, user: { id: newUser.id } }); // Antwort geändert
   } catch (error) {
     res.status(500).send('Interner Serverfehler');
   }
 });
+
+
 
 
 // FEATURE #2 : LOGIN
@@ -401,12 +427,17 @@ async function updateCartItem(userId, itemId, removeAll) {
   return user.cart_data;
 }
 
+
 // FEATURE #3 : EINKAUF
 app.post('/getcart', fetchuser, async (req, res) => {
   console.log("Get Cart");
-  let userData = await User.findOne({_id:req.user.id});
-  res.json(userData.cartData);
-})
+  let user = await User.findOne({ where: { id: req.user.id } });
+  if (!user) {
+    return res.status(404).send("User not found");
+  }
+  res.json(user.cart_data || {});
+});
+
 
 // FEATURE #4 : PRODUCTSUCHE
 app.get('/search', async (req, res) => {
@@ -415,7 +446,7 @@ app.get('/search', async (req, res) => {
     const products = await Product.findAll({
       where: {
         name: {
-          [Sequelize.Op.iLike]: `%${query}%` 
+          [Sequelize.Op.like]: `%${query}%` 
         }
       }
     });
@@ -733,6 +764,7 @@ app.get("/popularinwomen", async (req, res) => {
   }
 });
 
+
 /*
 // Database Connection With MongoDB
 mongoose.connect("mongodb+srv://testUser:TestPasswort78@cluster0.u4biwrc.mongodb.net/e-commerce").then(() => {
@@ -906,76 +938,3 @@ app.get("/popularinwomen", async (req, res) => {
 });
 */
 
-
-
-// TESTSERVER KONFIGURATION Jest-Server
-const jestApp = express();
-
-jestApp.use(express.json());
-
-jestApp.get("/", (req, res) => {
-  res.send("Jest Server is running");
-});
-
-jestApp.post('/login', (req, res) => {
-  const { email, password } = req.body;
-  if (email === 'admin@example.com' && password === 'password') {
-    return res.json({ success: true, token: 'mocked_token' });
-  } else {
-    return res.status(400).json({ success: false, errors: "Invalid credentials" });
-  }
-});
-
-jestApp.post('/signup', (req, res) => {
-  if (!req.body.checkbox) {
-    return res.status(400).json({ success: false, errors: "You must agree to the terms and conditions to sign up." });
-  }
-
-  const existingUser = false; // Mock the existing user check
-
-  if (existingUser) {
-    return res.status(400).json({ success: false, errors: "Ein Benutzer mit dieser E-Mail existiert bereits" });
-  }
-
-  // Mock user creation
-  const newUser = {
-    id: 1,
-    name: req.body.username,
-    email: req.body.email,
-    password: req.body.password,
-  };
-
-  const tokenData = { user: { id: newUser.id } };
-  const token = 'mocked_token'; // Mock token
-
-  res.status(200).json({ success: true, token });
-});
-
-
-
-jestApp.post('/addtocart', (req, res) => {
-  return res.json({ message: 'Item added successfully' });
-});
-
-jestApp.post('/addproduct', (req, res) => {
-  return res.json({ success: true, product: { ...req.body, id: 1 } });
-});
-
-jestApp.put('/updateproductadmin/:id', (req, res) => {
-  return res.json({ success: true, product: { ...req.body, id: req.params.id } });
-});
-
-jestApp.delete('/removeproduct/:id', (req, res) => {
-  return res.json({ success: true });
-});
-
-jestApp.get('/allproductsadmin', (req, res) => {
-  return res.json([
-    { id: 1, name: 'Product 1', price: 100, category_id: 1, collection_id: 1 },
-    { id: 2, name: 'Product 2', price: 200, category_id: 2, collection_id: 2 }
-  ]);
-});
-
-const jestServer = jestApp.listen(jestPort, () => {
-  console.log(`Jest Server is running on port ${jestPort}`);
-});
