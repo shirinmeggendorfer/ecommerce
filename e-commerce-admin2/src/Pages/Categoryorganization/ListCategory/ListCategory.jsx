@@ -64,28 +64,32 @@ const ListCategory = () => {
       <div className="button-wrapper">
         <button onClick={() => setShowAddCategory(true)}>Add New Category</button>
       </div>
-      <ul>
-        {categories.map(category => (
-          <li key={category.id}>
-            {editCategoryId === category.id ? (
-              <input
-                type="text"
-                value={newCategoryName}
-                onChange={e => setNewCategoryName(e.target.value)}
-                onBlur={() => handleEditCategory(category.id)} // Save on blur
-              />
-            ) : (
-              <>
-                <span>{category.name}</span>
-                <div className="button-group">
-                  <button onClick={() => { setEditCategoryId(category.id); setNewCategoryName(category.name); }}>Edit</button>
-                  <button onClick={() => handleDeleteCategory(category.id)}>Delete</button>
-                </div>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+      {categories.length === 0 ? (
+        <div>No categories available</div>
+      ) : (
+        <ul>
+          {categories.map(category => (
+            <li key={category.id}>
+              {editCategoryId === category.id ? (
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={e => setNewCategoryName(e.target.value)}
+                  onBlur={() => handleEditCategory(category.id)} // Save on blur
+                />
+              ) : (
+                <>
+                  <span>{category.name}</span>
+                  <div className="button-group">
+                    <button onClick={() => { setEditCategoryId(category.id); setNewCategoryName(category.name); }}>Edit</button>
+                    <button onClick={() => handleDeleteCategory(category.id)}>Delete</button>
+                  </div>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
       {showAddCategory && (
         <AddCategory
           closeForm={() => setShowAddCategory(false)}

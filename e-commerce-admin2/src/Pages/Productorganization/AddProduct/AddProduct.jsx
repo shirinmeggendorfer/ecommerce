@@ -1,49 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import './AddProduct.css';
 
-const AddProduct = () => {
+const AddProduct = ({ closeForm, onProductAdded }) => {
   const [product, setProduct] = useState({
     name: '',
     new_price: '',
     old_price: '',
     category_id: '',
     collection_id: '',
-    image: null,
+    image: null
   });
+  const [categories, setCategories] = useState([]);
+  const [collections, setCollections] = useState([]);
+
+  useEffect(() => {
+    // Fetch categories
+    const fetchCategories = async () => {
+      const res = await fetch('http://localhost:4000/admincategories');
+      const data = await res.json();
+      setCategories(data);
+    };
+
+    // Fetch collections
+    const fetchCollections = async () => {
+      const res = await fetch('http://localhost:4000/admincollections'); 
+      const data = await res.json();
+      setCollections(data);
+    };
+
+    fetchCategories();
+    fetchCollections();
+  }, []);
+
+  const handleFileChange = (e) => {
+    setProduct({ ...product, image: e.target.files[0] });
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProduct({ ...product, [name]: value });
   };
 
-  const handleFileChange = (e) => {
-    setProduct({ ...product, image: e.target.files[0] });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const formData = new FormData();
-      formData.append('name', product.name);
-      formData.append('new_price', product.new_price);
-      formData.append('old_price', product.old_price);
-      formData.append('category_id', product.category_id);
-      formData.append('collection_id', product.collection_id);
-      formData.append('image', product.image);
+      formData.append('product', product.image);
 
-      const response = await fetch('/addProduct', {
+      // Upload the image
+      const uploadResponse = await fetch('http://localhost:4000/upload', {
         method: 'POST',
         body: formData,
       });
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+      const uploadData = await uploadResponse.json();
 
-      const result = await response.json();
-      if (result.message === 'Product added successfully') {
-        alert('Product added successfully');
+      if (uploadData.success) {
+        // Now add the product with the uploaded image URL
+        const productResponse = await fetch('http://localhost:4000/addproduct', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: product.name,
+            new_price: product.new_price,
+            old_price: product.old_price,
+            category_id: product.category_id,
+            collection_id: product.collection_id,
+            image: uploadData.image_url, // Use the URL from the upload response
+          }),
+        });
+        if (!productResponse.ok) {
+          throw new Error('Failed to add product');
+        }
+        const productData = await productResponse.json();
+
+        if (productData.success) {
+          alert('Product added successfully');
+          setProduct({
+            name: '',
+            new_price: '',
+            old_price: '',
+            category_id: '',
+            collection_id: '',
+            image: null
+          }); // Reset the form
+          if (closeForm) closeForm(); // Close the form
+          if (onProductAdded) onProductAdded(); // Call the callback to refresh the product list
+        } else {
+          alert('Failed to add product');
+        }
       } else {
-        alert('Failed to add product');
+        alert('Failed to upload image');
       }
     } catch (error) {
-      alert('Failed to add product');
-      console.error('Failed to add product:', error);
+      alert(error.message);
     }
   };
 
@@ -51,63 +105,22 @@ const AddProduct = () => {
     <div className="add-product-container">
       <h2>Add Product</h2>
       <form onSubmit={handleSubmit}>
-        <input
-          name="name"
-          placeholder="Product Name"
-          required
-          type="text"
-          value={product.name}
-          onChange={handleChange}
-        />
-        <input
-          name="new_price"
-          placeholder="Product New Price"
-          required
-          step="0.01"
-          type="number"
-          value={product.new_price}
-          onChange={handleChange}
-        />
-        <input
-          name="old_price"
-          placeholder="Product Old Price"
-          required
-          step="0.01"
-          type="number"
-          value={product.old_price}
-          onChange={handleChange}
-        />
-        <label htmlFor="category_id">Category</label>
-        <select
-          id="category_id"
-          name="category_id"
-          required
-          value={product.category_id}
-          onChange={handleChange}
-        >
+        <input type="text" name="name" value={product.name} onChange={handleChange} placeholder="Product Name" required />
+        <input type="number" name="new_price" value={product.new_price} onChange={handleChange} placeholder="Product New Price" step="0.01" required />
+        <input type="number" name="old_price" value={product.old_price} onChange={handleChange} placeholder="Product Old Price" step="0.01" required />
+        <select name="category_id"  value={product.category_id} onChange={handleChange} placeholder="Category" required>
           <option value="">Select Category</option>
-          <option value="1">Category 1</option>
-          <option value="2">Category 2</option>
+          {categories.map(category => (
+            <option key={category.id} value={category.id}>{category.name}</option>
+          ))}
         </select>
-        <label htmlFor="collection_id">Collection</label>
-        <select
-          id="collection_id"
-          name="collection_id"
-          required
-          value={product.collection_id}
-          onChange={handleChange}
-        >
+        <select name="collection_id" value={product.collection_id} onChange={handleChange} placeholder="Collection" required>
           <option value="">Select Collection</option>
-          <option value="1">Collection 1</option>
-          <option value="2">Collection 2</option>
+          {collections.map(collection => (
+            <option key={collection.id} value={collection.id}>{collection.name}</option>
+          ))}
         </select>
-        <label htmlFor="product-image">Image</label>
-        <input
-          id="product-image"
-          required
-          type="file"
-          onChange={handleFileChange}
-        />
+        <input type="file" onChange={handleFileChange} placeholder="Image" required />
         <button type="submit">Submit</button>
       </form>
     </div>

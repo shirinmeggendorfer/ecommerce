@@ -13,7 +13,6 @@ RUN npm install sequelize
 RUN npm install --save-dev supertest
 RUN npm install --save-dev jest
 RUN npm install cors
-RUN npm install --save-dev @babel/preset-env @babel/preset-react
 RUN npm install nock --save-dev
 RUN npm install --save-dev jest supertest sequelize-test-helpers
 RUN npm install dotenv

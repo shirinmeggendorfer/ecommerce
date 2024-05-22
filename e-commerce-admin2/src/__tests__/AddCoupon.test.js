@@ -1,40 +1,24 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
 import AddCoupon from '../Pages/Couponorganization/AddCoupon/AddCoupon';
 
 const mockFetch = (url, options) => {
-  if (url.includes('admincategories')) {
+  if (url === 'http://localhost:4000/adminaddcoupon' && options.method === 'POST') {
+    const body = JSON.parse(options.body);
+    if (body.name && body.amount && typeof body.available === 'boolean') {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ success: true }),
+      });
+    }
     return Promise.resolve({
-      json: () => Promise.resolve(mockCategories)
-    });
-  }
-  if (url.includes('admincollections')) {
-    return Promise.resolve({
-      json: () => Promise.resolve(mockCollections)
-    });
-  }
-  if (url.includes('upload')) {
-    return Promise.resolve({
-      json: () => Promise.resolve({ success: true, image_url: 'uploaded_image_url' })
-    });
-  }
-  if (url.includes('addcoupon')) {
-    return Promise.resolve({
-      json: () => Promise.resolve({ success: true })
+      ok: false,
+      json: () => Promise.resolve({ success: false }),
     });
   }
   return Promise.reject(new Error('Unknown URL'));
 };
-
-const mockCategories = [
-  { id: 1, name: 'Category 1' },
-  { id: 2, name: 'Category 2' }
-];
-
-const mockCollections = [
-  { id: 1, name: 'Collection 1' },
-  { id: 2, name: 'Collection 2' }
-];
 
 global.fetch = jest.fn().mockImplementation(mockFetch);
 global.alert = jest.fn();
@@ -48,72 +32,86 @@ describe('AddCoupon', () => {
     alert.mockClear();
   });
 
-  it('loads and displays categories and collections', async () => {
-    await act(async () => {
-      render(<AddCoupon closeForm={closeFormMock} onCouponAdded={onCouponAddedMock} />);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Category 1')).toBeInTheDocument();
-      expect(screen.getByText('Collection 1')).toBeInTheDocument();
-    });
-  });
-
   it('submits new coupon successfully', async () => {
     await act(async () => {
       render(<AddCoupon closeForm={closeFormMock} onCouponAdded={onCouponAddedMock} />);
     });
 
     const nameInput = screen.getByPlaceholderText('Coupon Name');
-    const discountInput = screen.getByPlaceholderText('Discount');
-    const categorySelect = screen.getByLabelText('Category');
-    const collectionSelect = screen.getByLabelText('Collection');
-    const fileInput = screen.getByLabelText(/Image/i);
+    const amountInput = screen.getByPlaceholderText('Discount Amount (%)');
+    const availableCheckbox = screen.getByLabelText(/Available/i);
 
     fireEvent.change(nameInput, { target: { value: 'New Coupon' } });
-    fireEvent.change(discountInput, { target: { value: '20' } });
-    fireEvent.change(categorySelect, { target: { value: '1' } });
-    fireEvent.change(collectionSelect, { target: { value: '1' } });
-    fireEvent.change(fileInput, { target: { files: [new File(['dummy content'], 'example.png', { type: 'image/png' })] } });
+    fireEvent.change(amountInput, { target: { value: '20' } });
+    fireEvent.click(availableCheckbox);
 
     const submitButton = screen.getByText(/Submit/i);
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('http://localhost:4000/upload', expect.any(Object));
-      expect(global.fetch).toHaveBeenCalledWith('http://localhost:4000/addcoupon', expect.any(Object));
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:4000/adminaddcoupon',
+        expect.any(Object)
+      );
       expect(alert).toHaveBeenCalledWith('Coupon added successfully');
       expect(closeFormMock).toHaveBeenCalled();
       expect(onCouponAddedMock).toHaveBeenCalled();
     });
   });
 
-  it('handles coupon addition failure', async () => {
-    global.fetch.mockImplementationOnce(() => Promise.resolve({
-      json: () => Promise.resolve({ success: false })
-    }));
+  it('handles failed coupon addition', async () => {
+    fetch.mockImplementationOnce((url, options) => {
+      if (url === 'http://localhost:4000/adminaddcoupon' && options.method === 'POST') {
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ success: false }),
+        });
+      }
+      return mockFetch(url, options);
+    });
 
     await act(async () => {
       render(<AddCoupon closeForm={closeFormMock} onCouponAdded={onCouponAddedMock} />);
     });
 
     const nameInput = screen.getByPlaceholderText('Coupon Name');
-    const discountInput = screen.getByPlaceholderText('Discount');
-    const categorySelect = screen.getByLabelText('Category');
-    const collectionSelect = screen.getByLabelText('Collection');
-    const fileInput = screen.getByLabelText(/Image/i);
+    const amountInput = screen.getByPlaceholderText('Discount Amount (%)');
+    const availableCheckbox = screen.getByLabelText(/Available/i);
 
     fireEvent.change(nameInput, { target: { value: 'New Coupon' } });
-    fireEvent.change(discountInput, { target: { value: '20' } });
-    fireEvent.change(categorySelect, { target: { value: '1' } });
-    fireEvent.change(collectionSelect, { target: { value: '1' } });
-    fireEvent.change(fileInput, { target: { files: [new File(['dummy content'], 'example.png', { type: 'image/png' })] } });
+    fireEvent.change(amountInput, { target: { value: '20' } });
+    fireEvent.click(availableCheckbox);
 
     const submitButton = screen.getByText(/Submit/i);
     fireEvent.click(submitButton);
 
     await waitFor(() => {
       expect(alert).toHaveBeenCalledWith('Failed to add coupon');
+    });
+  });
+
+  it('handles network error during coupon addition', async () => {
+    fetch.mockImplementationOnce(() => {
+      return Promise.reject(new Error('Network error'));
+    });
+
+    await act(async () => {
+      render(<AddCoupon closeForm={closeFormMock} onCouponAdded={onCouponAddedMock} />);
+    });
+
+    const nameInput = screen.getByPlaceholderText('Coupon Name');
+    const amountInput = screen.getByPlaceholderText('Discount Amount (%)');
+    const availableCheckbox = screen.getByLabelText(/Available/i);
+
+    fireEvent.change(nameInput, { target: { value: 'New Coupon' } });
+    fireEvent.change(amountInput, { target: { value: '20' } });
+    fireEvent.click(availableCheckbox);
+
+    const submitButton = screen.getByText(/Submit/i);
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(alert).toHaveBeenCalledWith('Error submitting coupon');
     });
   });
 });

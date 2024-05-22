@@ -48,6 +48,7 @@ services:
     depends_on:
       - backend
 
+
   admin:
     build: ./e-commerce-admin2
     networks:
@@ -59,3 +60,4 @@ services:
     environment:
       - PORT=3005
       - REACT_APP_BACKEND_URL=http://backend:4000
+

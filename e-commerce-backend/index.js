@@ -300,6 +300,16 @@ app.put('/users/:id', async (req, res) => {
 // FEATURE #1 : REGISTRIERUNG
 app.post('/signup', async (req, res) => {
   try {
+    if (req.body.username.length < 3) {
+      return res.status(400).json({ success: false, errors: "Validation errors: username too short" });
+    }
+    if (!req.body.email.includes("@")) {
+      return res.status(400).json({ success: false, errors: "Validation errors: invalid email" });
+    }
+    if (req.body.password.length < 6) {
+      return res.status(400).json({ success: false, errors: "Validation errors: password too short" });
+    }
+
     const existingUser = await User.findOne({ where: { email: req.body.email } });
     if (existingUser) {
       return res.status(400).json({ success: false, errors: "Ein Benutzer mit dieser E-Mail existiert bereits" });
@@ -393,7 +403,7 @@ app.post('/removefromcart', cors(), fetchuser, async (req, res) => {
   try {
     const { itemId, removeAll } = req.body;
     let user = await User.findOne({ where: { id: req.user.id } });
-    if (!user || !user.cart_data) return res.status(404).send("User or cart not found.");
+    if (!user || !user.cart_data) return res.status(404).send({ message: "User or cart not found." });
 
     if (removeAll || user.cart_data[itemId] <= 1) {
       delete user.cart_data[itemId];
@@ -405,7 +415,7 @@ app.post('/removefromcart', cors(), fetchuser, async (req, res) => {
     res.json({ success: true, cartData: user.cart_data });
   } catch (error) {
     console.error("Error modifying cart:", error);
-    res.status(500).send("Internal Server Error");
+    res.status(500).send({ message: "Internal Server Error" });
   }
 });
 
@@ -474,13 +484,16 @@ app.post('/adminaddcategory', async (req, res) => {
 app.put('/adminupdatecategory/:id', async (req, res) => {
   try {
     const { name } = req.body;
+    if (name.length > 255) {
+      return res.status(400).send({ message: "Validation error" });
+    }
     const category = await Category.update({ name }, {
       where: { id: req.params.id }
     });
     res.json({ success: true, category });
   } catch (error) {
     console.error("Error updating category:", error);
-    res.status(500).send({ success: false, message: error.message });
+    res.status(500).send({ message: "Server error" });
   }
 });
 
@@ -488,13 +501,16 @@ app.put('/adminupdatecategory/:id', async (req, res) => {
 app.delete('/admindeletecategory/:id', async (req, res) => {
   try {
     const id = req.params.id;
+    if (isNaN(id)) {
+      return res.status(400).send({ message: "Invalid category ID" });
+    }
     await Category.destroy({
       where: { id }
     });
     res.json({ success: true, message: 'Category deleted' });
   } catch (error) {
     console.error("Error deleting category:", error);
-    res.status(500).send({ success: false, message: error.message });
+    res.status(500).send({ message: "Server error" });
   }
 });
 
@@ -549,6 +565,8 @@ app.delete('/admindeletecollection/:id', async (req, res) => {
   }
 });
 
+
+
 // FEATURE #12 : COLLECTION AUFLISTEN
 app.get('/admincollections', async (req, res) => {
   try {
@@ -566,6 +584,9 @@ app.get('/admincollections', async (req, res) => {
 app.post('/adminaddcoupon', async (req, res) => {
   try {
     const { name, amount, available } = req.body;
+    if (!name || amount === undefined || available === undefined) {
+      return res.status(400).send({ message: "Validation error" });
+    }
     const coupon = await Coupon.create({ name, amount, available });
     res.json({ success: true, coupon });
   } catch (error) {
@@ -578,13 +599,16 @@ app.post('/adminaddcoupon', async (req, res) => {
 app.put('/adminupdatecoupon/:id', async (req, res) => {
   try {
     const { name, amount, available } = req.body;
+    if (amount < 0 || available === undefined) {
+      return res.status(400).send({ message: "Validation error" });
+    }
     const coupon = await Coupon.update({ name, amount, available }, {
       where: { id: req.params.id }
     });
     res.json({ success: true, coupon });
   } catch (error) {
     console.error("Error updating coupon:", error);
-    res.status(500).send({ success: false, message: error.message });
+    res.status(500).send({ message: "Server error" });
   }
 });
 
@@ -598,7 +622,7 @@ app.delete('/admindeletecoupon/:id', async (req, res) => {
     res.json({ success: true, message: 'Coupon deleted' });
   } catch (error) {
     console.error("Error deleting coupon:", error);
-    res.status(500).send({ success: false, message: error.message });
+    res.status(500).send({ message: "Server error" });
   }
 });
 
@@ -612,6 +636,7 @@ app.get('/admincoupons', async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+
 
 // FEATURE #17 : PRODUKTE AUFLISTEN
 app.get("/allproductsadmin", async (req, res) => {
@@ -630,6 +655,8 @@ app.get("/allproductsadmin", async (req, res) => {
     res.status(500).send('Interner Serverfehler');
   }
 });
+
+
 
 // FEATURE #18 : PRODUKTE ANZEIGEN
 app.get("/productadmin/:id", async (req, res) => {
@@ -763,6 +790,10 @@ app.get("/popularinwomen", async (req, res) => {
     res.status(500).send('Interner Serverfehler');
   }
 });
+
+
+
+
 
 
 /*

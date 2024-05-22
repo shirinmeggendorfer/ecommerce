@@ -8,6 +8,8 @@ COPY package-lock.json ./
 RUN npm install
 RUN npm install react-router-dom
 RUN npm install axios
+RUN npm install --save-dev jest @testing-library/react @testing-library/jest-dom
+
 
 COPY . .
 
