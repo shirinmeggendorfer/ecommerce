@@ -1,24 +1,15 @@
-// src/__tests__/Product.test.js
 import React from 'react';
 import { render, act } from '@testing-library/react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ShopContext } from '../Context/ShopContext';
 import Product from '../Pages/Product';
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/extend-expect'; // Ensure the correct import for jest-dom
 
 // Mock data
 const mockProducts = [
   { id: 1, name: 'Product 1', category: 'Category 1', image: 'product1.jpg' },
   { id: 2, name: 'Product 2', category: 'Category 2', image: 'product2.jpg' }
 ];
-
-// Mock useParams hook
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useParams: () => ({
-    productId: '1' // Set this to match one of the mock product IDs
-  })
-}));
 
 // Mock window.scrollTo
 global.scrollTo = jest.fn();
@@ -29,11 +20,13 @@ describe('Product component', () => {
 
     await act(async () => {
       ({ getByText } = render(
-        <Router>
+        <MemoryRouter initialEntries={['/product/1']}>
           <ShopContext.Provider value={{ products: mockProducts }}>
-            <Product />
+            <Routes>
+              <Route path="/product/:productId" element={<Product />} />
+            </Routes>
           </ShopContext.Provider>
-        </Router>
+        </MemoryRouter>
       ));
     });
 
@@ -47,11 +40,13 @@ describe('Product component', () => {
 
     await act(async () => {
       ({ getByText } = render(
-        <Router>
+        <MemoryRouter initialEntries={['/product/1']}>
           <ShopContext.Provider value={{ products: mockProducts }}>
-            <Product />
+            <Routes>
+              <Route path="/product/:productId" element={<Product />} />
+            </Routes>
           </ShopContext.Provider>
-        </Router>
+        </MemoryRouter>
       ));
     });
 
@@ -66,15 +61,36 @@ describe('Product component', () => {
 
     await act(async () => {
       ({ getByText } = render(
-        <Router>
+        <MemoryRouter initialEntries={['/product/1']}>
           <ShopContext.Provider value={{ products: mockProducts }}>
-            <Product />
+            <Routes>
+              <Route path="/product/:productId" element={<Product />} />
+            </Routes>
           </ShopContext.Provider>
-        </Router>
+        </MemoryRouter>
       ));
     });
 
     // Check for the RelatedProducts component (assuming it contains some text)
     expect(getByText('Related Products')).toBeInTheDocument();
+  });
+
+  it('shows "Product not found" message when product does not exist', async () => {
+    let getByText;
+
+    await act(async () => {
+      ({ getByText } = render(
+        <MemoryRouter initialEntries={['/product/999']}>
+          <ShopContext.Provider value={{ products: mockProducts }}>
+            <Routes>
+              <Route path="/product/:productId" element={<Product />} />
+            </Routes>
+          </ShopContext.Provider>
+        </MemoryRouter>
+      ));
+    });
+
+    // Check for "Product not found" message
+    expect(getByText('Product not found')).toBeInTheDocument();
   });
 });

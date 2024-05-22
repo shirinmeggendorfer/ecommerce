@@ -17,8 +17,8 @@ describe('Hero component', () => {
     expect(screen.getByText('Latest Collection')).toBeInTheDocument();
 
     // Check that the images are rendered correctly
-    expect(screen.getByAltText('Hand Icon')).toBeInTheDocument();
-    expect(screen.getByAltText('Arrow Icon')).toBeInTheDocument();
-    expect(screen.getByAltText('Hero Image')).toBeInTheDocument();
+    expect(screen.getByAltText('Hand')).toBeInTheDocument();
+    expect(screen.getByAltText('Arrow')).toBeInTheDocument();
+    expect(screen.getByAltText('Hero')).toBeInTheDocument();
   });
 });

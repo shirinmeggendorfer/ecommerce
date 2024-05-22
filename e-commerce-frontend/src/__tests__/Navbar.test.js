@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter as Router } from 'react-router-dom';
-import { act } from 'react-dom/test-utils';
+import { BrowserRouter as Router, MemoryRouter, Route, Routes } from 'react-router-dom';
+import { act } from 'react';
 import Navbar from '../Components/Navbar/Navbar';
 import { ShopContext } from '../Context/ShopContext';
 
@@ -91,4 +91,27 @@ describe('Navbar component', () => {
       expect(localStorage.getItem('auth-token')).toBeNull();
     });
   });
+
+  it('toggles the dropdown menu', async () => {
+    await act(async () => {
+      render(
+        <ShopContext.Provider value={mockContextValue}>
+          <Router>
+            <Navbar />
+          </Router>
+        </ShopContext.Provider>
+      );
+    });
+
+    const dropdownIcon = screen.getByAltText('');
+    fireEvent.click(dropdownIcon);
+
+    const navMenu = document.querySelector('.nav-menu');
+    expect(navMenu.classList.contains('nav-menu-visible')).toBe(true);
+
+    fireEvent.click(dropdownIcon);
+    expect(navMenu.classList.contains('nav-menu-visible')).toBe(false);
+  });
+
+
 });
