@@ -10,8 +10,14 @@ How to run project :
 x
 How to test 
 - open terminal 
-- run docker exec -it ecommerce-backend-1 npm test -- --coverage
 
+Frontend:
+- run "docker exec -it ecommerce-frontend-1 npm test"
 
+Admin:
+- run " docker exec -it   ecommerce-admin-1  npm test "
+
+Backend:
+- run " docker exec -it ecommerce-backend-1 npx jest --coverage --detectOpenHandles "
 
 
