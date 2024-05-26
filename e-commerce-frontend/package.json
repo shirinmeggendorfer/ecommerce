@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@paypal/react-paypal-js": "^8.3.0",
+    "axios": "^1.7.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.15.0",
@@ -11,12 +12,13 @@
     "web-vitals": "^2.1.4"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.24.5",
-    "@babel/preset-react": "^7.24.1",
+    "@babel/core": "^7.24.6",
+    "@babel/preset-env": "^7.24.6",
+    "@babel/preset-react": "^7.24.6",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
-    "babel-jest": "^27.0.6",
+    "babel-jest": "^27.5.1",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^27.5.1",
     "jest-environment-jsdom": "^27.0.6",

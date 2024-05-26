@@ -18,6 +18,7 @@ const FakePaymentButton = ({ amount, onSuccess }) => {
   const handlePayment = () => {
     if (selectedCheck) {
       onSuccess({ amount });
+      console.log('Payment successful');
     }
   };
 

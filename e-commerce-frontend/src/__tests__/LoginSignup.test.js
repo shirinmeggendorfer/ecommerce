@@ -47,7 +47,7 @@ describe('LoginSignup component', () => {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username: '', email: 'test@test.com', password: 'test1234' }),
+      body: JSON.stringify({ email: 'test@test.com', password: 'test1234' }),
     });
 
     // Überprüfe weiteres erwartetes Verhalten basierend auf der API-Antwort
@@ -55,6 +55,7 @@ describe('LoginSignup component', () => {
       expect(localStorage.getItem('auth-token')).toBe('mockToken');
     });
   });
+
 
   it('calls signup function when on signup page and continue button is clicked', async () => {
     const { getByText, getByPlaceholderText } = render(

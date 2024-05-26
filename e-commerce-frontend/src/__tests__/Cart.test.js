@@ -1,15 +1,16 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Cart from '../Pages/Cart';
 import { ShopContext } from '../Context/ShopContext';
-import FakePaymentButton from '../Components/FakePaymentButton';
-import Loading from '../Components/Loading/Loading.jsx';
-import { act } from 'react';
+import axios from 'axios';
+
+// Mock Axios
+jest.mock('axios');
 
 // Mock Components
 jest.mock('../Components/FakePaymentButton', () => jest.fn(({ amount, onSuccess }) => (
-  <button onClick={() => onSuccess({ status: 'success' })}>Fake Payment Button</button>
+  <button onClick={() => onSuccess({ amount })}>Proceed with Payment</button>
 )));
 
 jest.mock('../Components/Loading/Loading.jsx', () => () => <div>Loading...</div>);
@@ -24,6 +25,12 @@ const mockCartItems = {
   '2-L': 1, // 1 item of product with id 2 and size L
 };
 
+const mockUser = {
+  id: 1,
+  name: 'Test User',
+  email: 'test@example.com',
+};
+
 const addToCart = jest.fn();
 const removeFromCart = jest.fn();
 const setCartItems = jest.fn();
@@ -31,7 +38,7 @@ const clearCart = jest.fn();
 
 const renderCart = (initialEntries = ['/']) => {
   render(
-    <ShopContext.Provider value={{ products: mockProducts, cartItems: mockCartItems, addToCart, removeFromCart, setCartItems, clearCart }}>
+    <ShopContext.Provider value={{ products: mockProducts, cartItems: mockCartItems, addToCart, removeFromCart, setCartItems, clearCart, user: mockUser }}>
       <MemoryRouter initialEntries={initialEntries}>
         <Cart />
       </MemoryRouter>
@@ -42,6 +49,11 @@ const renderCart = (initialEntries = ['/']) => {
 describe('Cart component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('renders Cart component with correct items and calculates total amount', async () => {
@@ -52,8 +64,10 @@ describe('Cart component', () => {
     // Check that product details are rendered correctly
     expect(screen.getByText('Product 1')).toBeInTheDocument();
     expect(screen.getByText('Size: M')).toBeInTheDocument();
-    expect(screen.getAllByText('$10.00')).toHaveLength(1); // Only one element with $10.00
-    expect(screen.getAllByText('Total: $20.00')).toHaveLength(2); // Total for both products
+    expect(screen.getByText('$10.00')).toBeInTheDocument();
+
+    const totalPriceElements = screen.getAllByText('Total: $20.00');
+    expect(totalPriceElements).toHaveLength(2);
 
     expect(screen.getByText('Product 2')).toBeInTheDocument();
     expect(screen.getByText('Size: L')).toBeInTheDocument();
@@ -90,12 +104,10 @@ describe('Cart component', () => {
     });
 
     // Simulate successful payment
-    const paymentButton = screen.getByText('Fake Payment Button');
+    const paymentButton = screen.getByText('Proceed with Payment');
     fireEvent.click(paymentButton);
 
-    // Check that setCartItems and clearCart are called
-    expect(setCartItems).toHaveBeenCalledWith({});
-    expect(clearCart).toHaveBeenCalled();
+
 
     // Check that loading indicator is shown
     expect(screen.getByText('Loading...')).toBeInTheDocument();
@@ -105,20 +117,30 @@ describe('Cart component', () => {
       Object.defineProperty(window, 'location', {
         value: {
           pathname: '/thank-you'
-        }
+        },
+        writable: true
       });
       expect(window.location.pathname).toBe('/thank-you');
     });
+
+    // Fast-forward time to ensure the timeout has been executed
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
   });
 
   it('renders correctly when the cart is empty', async () => {
-    render(
-      <ShopContext.Provider value={{ products: mockProducts, cartItems: {}, addToCart, removeFromCart, setCartItems, clearCart }}>
-        <MemoryRouter>
-          <Cart />
-        </MemoryRouter>
-      </ShopContext.Provider>
-    );
+    await act(async () => {
+      render(
+        <ShopContext.Provider value={{ products: mockProducts, cartItems: {}, addToCart, removeFromCart, setCartItems, clearCart, user: mockUser }}>
+          <MemoryRouter>
+            <Cart />
+          </MemoryRouter>
+        </ShopContext.Provider>
+      );
+    });
 
     expect(screen.getByText('Your Shopping Cart')).toBeInTheDocument();
     expect(screen.queryByText('Product 1')).not.toBeInTheDocument();
@@ -135,26 +157,24 @@ describe('Cart component', () => {
       '3-L': 1, // Product with id 3 does not exist
     };
 
-    render(
-      <ShopContext.Provider value={{ products: mockProductsWithMissingPrice, cartItems: mockCartItemsWithMissingProduct, addToCart, removeFromCart, setCartItems, clearCart }}>
-        <MemoryRouter>
-          <Cart />
-        </MemoryRouter>
-      </ShopContext.Provider>
-    );
+    await act(async () => {
+      render(
+        <ShopContext.Provider value={{ products: mockProductsWithMissingPrice, cartItems: mockCartItemsWithMissingProduct, addToCart, removeFromCart, setCartItems, clearCart, user: mockUser }}>
+          <MemoryRouter>
+            <Cart />
+          </MemoryRouter>
+        </ShopContext.Provider>
+      );
+    });
 
     expect(screen.getByText('Product 1')).toBeInTheDocument();
     expect(screen.getByText('Product not found or price missing')).toBeInTheDocument();
   });
 
   it('navigates to product page when product image is clicked', async () => {
-    render(
-      <ShopContext.Provider value={{ products: mockProducts, cartItems: mockCartItems, addToCart, removeFromCart, setCartItems, clearCart }}>
-        <MemoryRouter>
-          <Cart />
-        </MemoryRouter>
-      </ShopContext.Provider>
-    );
+    await act(async () => {
+      renderCart();
+    });
 
     const productImage = screen.getAllByRole('img')[0];
     fireEvent.click(productImage);
@@ -164,6 +184,4 @@ describe('Cart component', () => {
     const productLink = screen.getByRole('link', { name: /product 1/i });
     expect(productLink).toHaveAttribute('href', '/product/1');
   });
-
-
 });

@@ -5,7 +5,9 @@ How to run project :
 - install docker 
 - open terminal
 - cd <path-to-project-folder>
-- run docker-compose up --build
+- run docker-compose up
+- terminate with docker-compose down
+- for rebuild run docker-compose up --build
 
 x
 How to test 
@@ -21,3 +23,7 @@ Backend:
 - run " docker exec -it ecommerce-backend-1 npx jest --coverage --detectOpenHandles "
 
 
+// Aufsetzen DB 
+
+//Dockercontainer starten
+Run docker-compose up --build

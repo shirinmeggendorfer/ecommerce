@@ -1,8 +1,9 @@
 const request = require('supertest');
-const { app, sequelize, Category, Collection, Product, Coupon, User } = require('../index');
+const { app, sequelize, Category, Collection, Product, Coupon, Order, OrderItem, User } = require('../index');
 const jwt = require('jsonwebtoken');
 const events = require('events');
 const http = require('http');
+const { beforeAll, afterAll, afterEach, describe, it, expect, jest } = require('@jest/globals');
 
 let server;
 let token;
@@ -516,6 +517,7 @@ describe('Database Models', () => {
     });
   });
 
+
   describe('User Model', () => {
     it('should create a user', async () => {
       const user = await User.create({ name: 'useer', email: 'testuser@example.com', password: 'testtest232' });
@@ -781,7 +783,11 @@ describe('Database Models', () => {
       });
     });
   });
+
+
+ 
 });
+
 
 describe('API Endpoints - Enhanced Branch Coverage', () => {
   it('should return 500 for adding a product with invalid token', async () => {
@@ -2075,3 +2081,71 @@ describe('PUT /adminupdatecoupon/:id', () => {
     expect(res.body.message).toBe('Validation error');
   });
 });
+
+
+describe('fetchuser Middleware', () => {
+  it('should return 401 if no token is provided', async () => {
+    const res = await request(app).get('/me');
+    expect(res.status).toBe(401);
+    expect(res.body.errors).toBe("Please authenticate using a valid token");
+  });
+
+  it('should return 401 if token verification fails', async () => {
+    jwt.verify = jest.fn().mockImplementation(() => { throw new Error('Invalid token'); });
+    const res = await request(app).get('/me').set('Authorization', 'Bearer invalidtoken');
+    expect(res.status).toBe(401);
+    expect(res.body.errors).toBe("Invalid token");
+  });
+
+  it('should return 401 if user is not found', async () => {
+    jwt.verify = jest.fn().mockReturnValue({ user: { id: 1 } });
+    User.findOne = jest.fn().mockResolvedValue(null);
+    const res = await request(app).get('/me').set('Authorization', 'Bearer validtoken');
+    expect(res.status).toBe(401);
+    expect(res.body.errors).toBe("User not found");
+  });
+});
+
+
+describe('POST /adminaddcoupon', () => {
+  it('should return 400 if name is missing', async () => {
+    const res = await request(app).post('/adminaddcoupon').send({ amount: 10, available: true });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Validation error');
+  });
+
+  it('should return 400 if amount is missing', async () => {
+    const res = await request(app).post('/adminaddcoupon').send({ name: 'TestCoupon', available: true });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Validation error');
+  });
+
+  it('should return 400 if available flag is missing', async () => {
+    const res = await request(app).post('/adminaddcoupon').send({ name: 'TestCoupon', amount: 10 });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Validation error');
+  });
+});
+
+describe('PUT /adminupdatecoupon/:id', () => {
+  it('should return 400 if amount is negative', async () => {
+    const res = await request(app).put('/adminupdatecoupon/1').send({ name: 'UpdatedCoupon', amount: -10, available: false });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Validation error');
+  });
+});
+
+
+
+describe('PUT /adminupdatecategory/:id', () => {
+  it('should return 400 if name is too long', async () => {
+    const longName = 'a'.repeat(256);
+    const res = await request(app).put('/adminupdatecategory/1').send({ name: longName });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Validation error');
+  });
+});
+
+
+
+
