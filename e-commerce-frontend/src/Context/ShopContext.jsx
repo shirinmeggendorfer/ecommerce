@@ -1,4 +1,3 @@
-// src/Context/ShopContext.js
 import React, { createContext, useEffect, useState } from "react";
 import { useNavigate } from 'react-router-dom';
 
@@ -8,6 +7,7 @@ const ShopContextProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState({});
   const [totalCartItems, setTotalCartItems] = useState(0);
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   const token = localStorage.getItem("auth-token");
@@ -30,6 +30,30 @@ const ShopContextProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      if (token) {
+        console.log('Authorization token:', token); // Add logging to check the token
+        try {
+          const res = await fetch('http://localhost:4000/getuser', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            console.log('Fetched user data:', data); // Add logging here
+            setUser(data);
+          } else {
+            throw new Error('Failed to fetch user data');
+          }
+        } catch (error) {
+          console.error('Failed to fetch user data:', error);
+        }
+      }
+    };
+
     const fetchCart = async () => {
       if (token) {
         try {
@@ -53,6 +77,8 @@ const ShopContextProvider = ({ children }) => {
         }
       }
     };
+
+    fetchUserData();
     fetchCart();
   }, [token]);
 
@@ -126,12 +152,22 @@ const ShopContextProvider = ({ children }) => {
   };
 
   const getTotalCartItems = () => token ? totalCartItems : 0;
-  
+
   const clearCart = () => {
+    setCartItems({});
     setTotalCartItems(0);
   };
 
-  const contextValue = { products, cartItems, addToCart, removeFromCart, getTotalCartItems, clearCart, setCartItems };
+  const contextValue = {
+    products,
+    cartItems,
+    addToCart,
+    removeFromCart,
+    getTotalCartItems,
+    clearCart,
+    setCartItems,
+    user,
+  };
 
   return <ShopContext.Provider value={contextValue}>{children}</ShopContext.Provider>;
 };

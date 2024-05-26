@@ -48,7 +48,6 @@ CREATE TABLE public.coupons (
     name VARCHAR(255) UNIQUE NOT NULL,
     amount NUMERIC,
     available BOOLEAN DEFAULT FALSE
-
 );
 
 
@@ -86,6 +85,22 @@ CREATE TABLE public.users (
     "updatedAt" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+
+CREATE TABLE public.orders (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES public.users(id),
+    total_amount NUMERIC,
+    status VARCHAR(50)
+);
+
+CREATE TABLE public.order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES public.orders(id),
+    product_id INTEGER REFERENCES public.products(id),
+    quantity INTEGER,
+    price NUMERIC
+);
+
 --
 -- Data for Name: categories; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -106,6 +121,21 @@ INSERT INTO public.collections (name) VALUES ('womenCollection1'), ('menCollecti
 INSERT INTO public.coupons (name, amount, available) VALUES ('testcoupon20',0.2,TRUE);
 
 --
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.users (name, email, password, date, is_admin) VALUES
+('TestUser', 'test@test.com', 'test1234', '2024-05-06 15:29:57.132183', false),
+('admin', 'admin@admin.com', 'admin', '2024-05-06 15:29:57.13414', true),
+('beispiel', 'beispiel3@beispiel.com', 'beispiel', '2024-05-06 15:29:57.13414', true),
+('beispiel4', 'beispiel4@beispiel.com', 'beispiel', '2024-05-06 15:29:57.13414', true),
+('beispiel', 'beispiel@beispiel.com', 'beispiel', '2024-05-06 15:29:57.13414', true);
+
+--
+-- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+--
 -- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -113,10 +143,15 @@ INSERT INTO public.products (name, image, category_id, collection_id, new_price,
 ('Beispielprodukt 1', 'dress.png', 2, 1, 49.99, 59.99, '2024-05-06 15:31:03.660153', true),
 ('Beispielprodukt 2', 'shirt.png', 1, 2, 29.99, 39.99, '2024-05-06 15:31:03.662069', true);
 
-INSERT INTO public.users ( name, email, password, date, is_admin) VALUES
-('TestUser', 'test@test.com', 'test1234', '2024-05-06 15:29:57.132183', false),
-('admin', 'admin@admin.com', 'admin',  '2024-05-06 15:29:57.13414', true),
-('beispiel', 'beispiel3@beispiel.com', 'beispiel',  '2024-05-06 15:29:57.13414', true),
-('beispiel', 'beispiel@beispiel.com', 'beispiel',  '2024-05-06 15:29:57.13414', true);
 
+-- Assuming the first user (id = 1) is the user for the order
+INSERT INTO public.orders (user_id, total_amount, status) VALUES
+(2, 1, 'pending');
 
+--
+-- Data for Name: order_items; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+-- Assuming the first order (id = 1) and first product (id = 1)
+INSERT INTO public.order_items (order_id, product_id, quantity, price) VALUES
+(1, 1, 1, 49.99);

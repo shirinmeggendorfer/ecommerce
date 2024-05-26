@@ -1,15 +1,20 @@
 // src/Pages/Cart.jsx
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { ShopContext } from '../Context/ShopContext';
 import './CSS/Cart.css';
 import { Link, useNavigate } from 'react-router-dom';
 import FakePaymentButton from '../Components/FakePaymentButton';
 import Loading from '../Components/Loading/Loading.jsx';
+import axios from 'axios';
 
 const Cart = () => {
-  const { products, cartItems, addToCart, removeFromCart, setCartItems , clearCart} = useContext(ShopContext);
+  const { products, cartItems, addToCart, removeFromCart, setCartItems, clearCart, user } = useContext(ShopContext);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log('User data in Cart component:', user); // Debugging log
+  }, [user]);
 
   const totalAmount = Object.keys(cartItems).reduce((total, key) => {
     const [id] = key.split('-');
@@ -22,16 +27,34 @@ const Cart = () => {
     return total;
   }, 0).toFixed(2);
 
-  const handleSuccessPayment = (details) => {
+  const handleSuccessPayment = async (details) => {
     console.log('Payment Success:', details);
+    if (!user) {
+      console.error('User is not available');
+      return;
+    }
     setLoading(true);
-    setCartItems({}); // Leert den Warenkorb
-    clearCart();
-    setTimeout(() => {
+    try {
+      const orderData = {
+        userId: user.id,
+        cartItems,
+        totalAmount
+      };
+      console.log('Sending order data:', orderData);
+  
+      await axios.post('http://localhost:4000/api/orders/create', orderData);
+      setCartItems({});
+      clearCart();
+      setTimeout(() => {
+        setLoading(false);
+        navigate('/thank-you');
+      }, 2000);
+    } catch (error) {
+      console.error('Error creating order:', error);
       setLoading(false);
-      navigate('/thank-you');
-    }, 2000); // Simulieren des Ladevorgangs für 2 Sekunden vor der Weiterleitung
+    }
   };
+  
 
   return (
     <div className="cart-container">
@@ -72,7 +95,11 @@ const Cart = () => {
       <div className="total-amount">
         <h2>Total Amount: ${totalAmount}</h2>
       </div>
-      <FakePaymentButton amount={totalAmount} onSuccess={handleSuccessPayment} />
+      {user ? (
+        <FakePaymentButton amount={totalAmount} onSuccess={handleSuccessPayment} />
+      ) : (
+        <p>Loading user information...</p>
+      )}
       {loading && <div className="loading-overlay"><Loading /></div>}
     </div>
   );

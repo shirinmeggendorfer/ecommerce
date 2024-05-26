@@ -169,6 +169,61 @@ const User = sequelize.define('User', {
   tableName: 'users'
 });
 
+const Order = sequelize.define('Order', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  user_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: User,
+      key: 'id'
+    }
+  },
+  total_amount: {
+    type: DataTypes.NUMERIC
+  },
+  status: {
+    type: DataTypes.STRING
+  }
+}, {
+  tableName: 'orders',
+  timestamps: false  
+});
+
+const OrderItem = sequelize.define('OrderItem', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  order_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: Order,
+      key: 'id'
+    }
+  },
+  product_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: Product,
+      key: 'id'
+    }
+  },
+  quantity: {
+    type: DataTypes.INTEGER
+  },
+  price: {
+    type: DataTypes.NUMERIC
+  }
+}, {
+  tableName: 'order_items',
+  timestamps: false  
+});
+
 
 
 sequelize.authenticate()
@@ -192,7 +247,7 @@ server.on('error', (error) => {
   }
 });
 
-module.exports = { app, sequelize, Category, Collection, Product, Coupon, User };
+module.exports = { app, sequelize, Category, Collection, Product, Coupon, Order, OrderItem, User };
 
 
 // Image Storage Engine 
@@ -214,6 +269,11 @@ app.post("/upload", upload.single('product'), (req, res) => {
 app.use('/images', express.static('upload/images'));
 
 
+
+
+
+  
+ 
 
 // MiddleWare to fetch user from database
 const fetchuser = async (req, res, next) => {
@@ -292,6 +352,63 @@ app.put('/users/:id', async (req, res) => {
     await user.save();
     res.json({ success: true, user });
   } catch (error) {
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+
+//ZUSATZ: ORDERS 
+app.post('/api/orders/create', async (req, res) => {
+  const { userId, cartItems, totalAmount } = req.body;
+
+  console.log('Order creation request received:', { userId, cartItems, totalAmount });
+
+  try {
+    // Create a new order
+    const order = await Order.create({
+      user_id: userId,
+      total_amount: totalAmount,
+      status: 'Pending'
+    });
+
+    // Log the created order
+    console.log('Order created:', order);
+
+    // Create order items
+    const orderItems = await Promise.all(Object.keys(cartItems).map(async key => {
+      const [productId, size] = key.split('-');
+      const quantity = cartItems[key];
+      const product = await Product.findByPk(productId);
+
+      if (product) {
+        const orderItem = await OrderItem.create({
+          order_id: order.id,
+          product_id: product.id,
+          quantity: quantity,
+          price: product.new_price
+        });
+        console.log('Order item created:', orderItem);
+        return orderItem;
+      } else {
+        console.error('Product not found:', productId);
+      }
+    }));
+
+    res.status(201).json({ order, orderItems });
+  } catch (error) {
+    console.error('Error creating order:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+
+app.post('/getuser', fetchuser, async (req, res) => {
+  try {
+    res.status(200).json(req.user);
+  } catch (error) {
+    console.error('Error fetching user data:', error);
     res.status(500).send('Internal Server Error');
   }
 });

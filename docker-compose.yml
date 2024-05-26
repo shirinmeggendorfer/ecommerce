@@ -4,6 +4,9 @@ networks:
   mynet:
     driver: bridge
 
+volumes:
+  postgres_data:
+  
 services:
   postgres:
     image: postgres:13
@@ -16,6 +19,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     volumes:
+      - postgres_data:/var/lib/postgresql/data
       - ./e-commerce-backend/new_dump_db.sql:/docker-entrypoint-initdb.d/new_dump_db.sql
 
   backend:

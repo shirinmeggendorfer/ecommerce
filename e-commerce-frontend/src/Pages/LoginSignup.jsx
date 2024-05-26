@@ -27,7 +27,7 @@ const LoginSignup = () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ email: formData.email, password: formData.password }), // Only send email and password for login
       });
 
       if (!response.ok) {
@@ -38,7 +38,7 @@ const LoginSignup = () => {
       dataObj = data;
       if (dataObj.success) {
         localStorage.setItem('auth-token', dataObj.token);
-        window.location.replace("/");
+        navigate("/"); // Redirect using navigate
       } else {
         alert(dataObj.errors);
       }
@@ -73,7 +73,7 @@ const LoginSignup = () => {
       dataObj = data;
       if (dataObj.success) {
         localStorage.setItem('auth-token', dataObj.token);
-        navigate("/");
+        navigate("/"); // Redirect using navigate
       } else {
         alert(dataObj.errors);
       }
