@@ -41,7 +41,7 @@ const Shop = () => {
           <h2>Search Results</h2>
           {searchResults.map(product => (
             <Link to={`/product/${product.id}`} key={product.id} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-              <img src={`http://localhost:4000/images/${product.image}`} alt={product.name} style={{ width: '50px', height: '50px', marginRight: '10px' }} />
+              <img src={`http://localhost:4000${product.image}`} alt={product.name} style={{ width: '50px', height: '50px', marginRight: '10px' }} />
               <div>
                 <p style={{ margin: 0 }}>{product.name}</p>
                 <p style={{ margin: 0 }}>${product.new_price}</p>

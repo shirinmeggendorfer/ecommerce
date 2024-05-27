@@ -55,7 +55,7 @@ const ProductDetails = ({ productId, close }) => {
   };
 
   const handleFileChange = (e) => {
-    setProduct(prev => ({ ...prev, image: e.target.files[0] }));
+    setProduct({ ...product, image: e.target.files[0] });
   };
 
   const handleSubmit = async (e) => {
@@ -66,8 +66,10 @@ const ProductDetails = ({ productId, close }) => {
     formData.append('collection_id', product.collection_id);
     formData.append('new_price', product.new_price);
     formData.append('old_price', product.old_price);
-    if (product.image) formData.append('image', product.image);
-
+    if (product.image) {
+      formData.append('product', product.image);  // Hier sicherstellen, dass der Name 'product' ist
+    }
+  
     try {
       const response = await fetch(`http://localhost:4000/updateproductadmin/${productId}`, {
         method: 'PUT',
@@ -84,6 +86,8 @@ const ProductDetails = ({ productId, close }) => {
       alert('Failed to update product.');
     }
   };
+  
+  
 
   if (loading) return <p>Loading...</p>;
   if (!product) return null;
@@ -118,7 +122,7 @@ const ProductDetails = ({ productId, close }) => {
         <input type="number" id="old_price" name="old_price" value={product.old_price} onChange={handleChange} placeholder="Old Price" />
 
         <label htmlFor="image">Image</label>
-        <input type="file" id="image" onChange={handleFileChange} />
+        <input type="file" onChange={handleFileChange} placeholder="Image" />
 
         <button type="submit">Update Product</button>
         <button type="button" onClick={close}>Close</button>

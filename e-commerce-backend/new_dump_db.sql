@@ -140,8 +140,8 @@ INSERT INTO public.users (name, email, password, date, is_admin) VALUES
 --
 
 INSERT INTO public.products (name, image, category_id, collection_id, new_price, old_price, date, available) VALUES
-('Beispielprodukt 1', 'dress.png', 2, 1, 49.99, 59.99, '2024-05-06 15:31:03.660153', true),
-('Beispielprodukt 2', 'shirt.png', 1, 2, 29.99, 39.99, '2024-05-06 15:31:03.662069', true);
+('Beispielprodukt 1', '/images/dress.png', 2, 1, 49.99, 59.99, '2024-05-06 15:31:03.660153', true),
+('Beispielprodukt 2', '/images/shirt.png', 1, 2, 29.99, 39.99, '2024-05-06 15:31:03.662069', true);
 
 
 -- Assuming the first user (id = 1) is the user for the order

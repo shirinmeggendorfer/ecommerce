@@ -27,7 +27,7 @@ const CartItems = () => {
                 <Link to={`/product/${product.id}`} style={{ textDecoration: 'none' }}>
                   <img 
                     onClick={() => window.scrollTo(0, 0)} 
-                    src={`http://localhost:4000/images/${product.image}`} 
+                    src={`http://localhost:4000${product.image}`} 
                     alt="products" 
                     className="cartitems-product-icon"  // Stelle sicher, dass diese Klasse im CSS definiert ist
                   />

@@ -20,12 +20,12 @@ const ProductDisplay = ({ product }) => {
       <div className="productdisplay-left">
         <div className="productdisplay-img-list">
           <Link to={`/product/${product.id}`} style={{ textDecoration: 'none' }}>
-            <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4000/images/${product.image}`} alt="products" />
+            <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4000${product.image}`} alt="products" />
           </Link>
         </div>
         <div className="productdisplay-img">
           <Link to={`/product/${product.id}`} style={{ textDecoration: 'none' }}>
-            <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4000/images/${product.image}`} alt="products" />
+            <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4000${product.image}`} alt="products" />
           </Link>
         </div>
       </div>

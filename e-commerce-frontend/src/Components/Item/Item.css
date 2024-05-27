@@ -1,9 +1,7 @@
 .item{
     width: 21%;
 }
-.item img{
-    width: 100%;
-}
+
 .item p{
     margin: 6px 0px;
 }
@@ -44,3 +42,11 @@
         font-size: 14px;
     }
 }
+.item img {
+    width: 100%; /* Bild passt sich der Breite des Containers an */
+    height: 200px; /* Feste Höhe des Bildes */
+    object-fit: cover; /* Zuschneiden der Bilder, um das Seitenverhältnis beizubehalten */
+    border-radius: 10px; /* Optional: Hinzufügen von abgerundeten Ecken */
+    box-sizing: border-box; /* Ensure padding does not affect the width */
+    padding: 10px; /* Padding um das Bild selbst */
+  }

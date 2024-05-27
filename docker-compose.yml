@@ -39,8 +39,10 @@ services:
     depends_on:
       - postgres
     volumes:
-      - ./e-commerce-backend/upload:/app/upload  # Mount the upload folder
-      - ./e-commerce-backend:/app  # Ensure the entire backend directory is mounted
+      - ./e-commerce-backend:/app  
+      - ./e-commerce-backend/upload:/e-commerce-backend/upload 
+    command: /bin/sh -c "chmod -R 777 /e-commerce-backend/upload && npm run start"
+    
 
 
   frontend:

@@ -1,3 +1,4 @@
+#admin frontend dockerfile
 FROM node:alpine
 
 WORKDIR /app/e-commerce-admin2

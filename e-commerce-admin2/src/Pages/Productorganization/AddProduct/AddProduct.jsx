@@ -46,7 +46,7 @@ const AddProduct = ({ closeForm, onProductAdded }) => {
     try {
       const formData = new FormData();
       formData.append('product', product.image);
-
+  
       // Upload the image
       const uploadResponse = await fetch('http://localhost:4000/upload', {
         method: 'POST',
@@ -56,7 +56,7 @@ const AddProduct = ({ closeForm, onProductAdded }) => {
         throw new Error('Failed to upload image');
       }
       const uploadData = await uploadResponse.json();
-
+  
       if (uploadData.success) {
         // Now add the product with the uploaded image URL
         const productResponse = await fetch('http://localhost:4000/addproduct', {
@@ -77,7 +77,7 @@ const AddProduct = ({ closeForm, onProductAdded }) => {
           throw new Error('Failed to add product');
         }
         const productData = await productResponse.json();
-
+  
         if (productData.success) {
           alert('Product added successfully');
           setProduct({
@@ -100,6 +100,7 @@ const AddProduct = ({ closeForm, onProductAdded }) => {
       alert(error.message);
     }
   };
+  
 
   return (
     <div className="add-product-container">

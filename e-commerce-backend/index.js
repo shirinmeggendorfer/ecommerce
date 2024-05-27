@@ -252,22 +252,30 @@ module.exports = { app, sequelize, Category, Collection, Product, Coupon, Order,
 
 // Image Storage Engine 
 const storage = multer.diskStorage({
-  destination: './upload/images',
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, 'upload/images');
+    console.log('Uploading file to:', uploadPath);
+    cb(null, uploadPath);
+  },
   filename: (req, file, cb) => {
-    console.log(file);
-    return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
+    console.log('Uploading file:', file);
+    cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
   }
-})
-const upload = multer({storage: storage})
+});
+const upload = multer({ storage: storage });
 
 app.post("/upload", upload.single('product'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: 0, message: 'No file uploaded' });
+  }
+  console.log('File uploaded to:', req.file.path);
   res.json({
     success: 1,
-    image_url: `${req.file.filename}`
-  })
-})
-app.use('/images', express.static('upload/images'));
+    image_url: `/images/${req.file.filename}`
+  });
+});
 
+app.use('/images', express.static(path.join(__dirname, 'upload/images')));
 
 
 
@@ -330,7 +338,12 @@ const fetchAdmin = async (req, res, next) => {
 
 //ADMINCHECK
 app.get('/admin/dashboard', fetchAdmin, (req, res) => {
-  res.json({ message: 'Welcome to the Admin Dashboard' });
+  try {
+    res.json({ message: 'Welcome to the Admin Dashboard' });
+  } catch (error) {
+    res.status(500).json({ errors: 'Internal Server Error' });
+  }
+  
 });
 
 app.get('/me', fetchuser, async (req, res) => {
@@ -372,9 +385,6 @@ app.post('/api/orders/create', async (req, res) => {
       status: 'Pending'
     });
 
-    // Log the created order
-    console.log('Order created:', order);
-
     // Create order items
     const orderItems = await Promise.all(Object.keys(cartItems).map(async key => {
       const [productId, size] = key.split('-');
@@ -388,7 +398,6 @@ app.post('/api/orders/create', async (req, res) => {
           quantity: quantity,
           price: product.new_price
         });
-        console.log('Order item created:', orderItem);
         return orderItem;
       } else {
         console.error('Product not found:', productId);
@@ -502,7 +511,7 @@ app.post('/addtocart', fetchuser, async (req, res) => {
   try {
     const user = await User.findOne({ where: { id: req.user.id } });
     if (!user) {
-      return res.status(404).send("User not found");
+      return res.status(404).json({ message: 'User not found' });
     }
 
     user.cart_data = user.cart_data || {};
@@ -520,7 +529,9 @@ app.post('/removefromcart', cors(), fetchuser, async (req, res) => {
   try {
     const { itemId, removeAll } = req.body;
     let user = await User.findOne({ where: { id: req.user.id } });
-    if (!user || !user.cart_data) return res.status(404).send({ message: "User or cart not found." });
+    if (!user || !user.cart_data) {
+      return res.status(404).json({ message: 'User or cart not found.' });
+    }
 
     if (removeAll || user.cart_data[itemId] <= 1) {
       delete user.cart_data[itemId];
@@ -579,8 +590,7 @@ app.get('/search', async (req, res) => {
     });
     res.json(products);
   } catch (error) {
-    console.error('Search error:', error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
@@ -790,20 +800,26 @@ app.get("/productadmin/:id", async (req, res) => {
 });
 
 // FEATURE #17 : PRODUKTE BEARBEITEN
-app.put("/updateproductadmin/:id", upload.single('image'), async (req, res) => {
+app.put("/updateproductadmin/:id", upload.single('product'), async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.id);
     if (!product) {
       return res.status(404).send({ message: "Product not found" });
     }
+
     const updatedData = {
       name: req.body.name,
-      image: product.image,
-      category: req.body.category,
+      category_id: req.body.category_id,
+      collection_id: req.body.collection_id,
       new_price: req.body.new_price,
       old_price: req.body.old_price,
-      available: req.body.available
+      available: req.body.available,
     };
+
+    if (req.file) {
+      updatedData.image = `/images/${req.file.filename}`; // Use the URL from the upload response
+    }
+
     const updatedProduct = await product.update(updatedData);
     res.json({ success: true, product: updatedProduct });
   } catch (error) {
@@ -811,6 +827,8 @@ app.put("/updateproductadmin/:id", upload.single('image'), async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+
+
 
 
 // FEATURE #19 : PRODUKTE HINZUFÜGEN
@@ -869,8 +887,7 @@ app.get("/newcollections", async (req, res) => {
     console.log("New Collections:", products);
     res.send(products);
   } catch (error) {
-    console.error('Fehler beim Abrufen der neuen Kollektionen:', error);
-    res.status(500).send('Interner Serverfehler');
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 

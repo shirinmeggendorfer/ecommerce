@@ -70,7 +70,7 @@ const Cart = () => {
             return (
               <div key={key} className="cart-item">
                 <Link to={`/product/${product.id}`} className="cart-item-image" style={{ textDecoration: 'none' }}>
-                  <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4000/images/${product.image}`} alt={product.name} />
+                  <img onClick={() => window.scrollTo(0, 0)} src={`http://localhost:4000${product.image}`} alt={product.name} />
                 </Link>
                 <div className="cart-item-details">
                   <p>{product.name}</p>

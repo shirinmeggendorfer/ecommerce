@@ -12,6 +12,7 @@ RUN npm install
 RUN npm install sequelize
 RUN npm install --save-dev supertest
 RUN npm install --save-dev jest
+RUN npm install jest supertest multer
 RUN npm install cors
 RUN npm install nock --save-dev
 RUN npm install --save-dev jest supertest sequelize-test-helpers
@@ -22,6 +23,10 @@ RUN apk update && apk add postgresql-client
 
 # Kopiere alle Dateien im aktuellen Verzeichnis (Projektverzeichnis) in das Arbeitsverzeichnis
 COPY . .
+
+
+# Setze die Berechtigungen für das Upload-Verzeichnis
+RUN chmod -R 777 /e-commerce-backend/upload
 
 
 # Öffne Port 4000 und 5063 für den Jest-Server

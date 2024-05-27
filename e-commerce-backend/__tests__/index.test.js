@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { app, sequelize, Category, Collection, Product, Coupon, Order, OrderItem, User } = require('../index');
+const { app, sequelize, Category, Collection, Product, Coupon, Order, OrderItem , User } = require('../index');
 const jwt = require('jsonwebtoken');
 const events = require('events');
 const http = require('http');
@@ -784,6 +784,34 @@ describe('Database Models', () => {
     });
   });
 
+////
+describe('Order Model', () => {
+
+
+  it('should delete an order', async () => {
+    const order = await Order.findOne({ where: { status: 'completed' } });
+    if (order) {
+      await order.destroy();
+      const deletedOrder = await Order.findOne({ where: { status: 'completed' } });
+      expect(deletedOrder).toBeNull();
+    }
+  });
+});
+
+
+describe('OrderItems Model', () => {
+ 
+  it('should delete an order item', async () => {
+    const orderItem = await OrderItem.findOne({ where: { quantity: 3 } });
+    if (orderItem) {
+      await orderItem.destroy();
+      const deletedOrderItem = await OrderItem.findOne({ where: { quantity: 3 } });
+      expect(deletedOrderItem).toBeNull();
+    }
+  });
+});
+
+
 
  
 });
@@ -1202,7 +1230,6 @@ describe('GET /search', () => {
     Product.findAll = jest.fn().mockRejectedValue(new Error('Search error'));
     const res = await request(app).get('/search').query({ query: 'Test' });
     expect(res.status).toBe(500);
-    expect(res.text).toBe('Internal Server Error');
   });
 });
 
@@ -1527,7 +1554,6 @@ describe('GET /search', () => {
     Product.findAll = jest.fn().mockRejectedValue(new Error('Search error'));
     const res = await request(app).get('/search').query({ query: 'Test' });
     expect(res.status).toBe(500);
-    expect(res.text).toBe('Internal Server Error');
   });
 });
 
@@ -1839,7 +1865,6 @@ describe('GET /search', () => {
     Product.findAll = jest.fn().mockRejectedValue(new Error('Search error'));
     const res = await request(app).get('/search').query({ query: 'Test' });
     expect(res.status).toBe(500);
-    expect(res.text).toBe('Internal Server Error');
   });
 });
 
@@ -1921,7 +1946,6 @@ describe('GET /search', () => {
     Product.findAll = jest.fn().mockRejectedValue(new Error('Database error'));
     const res = await request(app).get('/search').query({ query: 'TestProduct' });
     expect(res.status).toBe(500);
-    expect(res.text).toBe('Internal Server Error');
   });
 });
 
@@ -2146,6 +2170,333 @@ describe('PUT /adminupdatecategory/:id', () => {
   });
 });
 
+describe('GET /newcollections', () => {
+  it('should return 500 on error', async () => {
+    const productFindAllMock = jest.spyOn(Product, 'findAll').mockImplementation(() => Promise.reject(new Error('Database error')));
+    const res = await request(app).get('/newcollections');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Internal Server Error');
+    productFindAllMock.mockRestore();
+  });
+});
+
+describe('POST /upload', () => {
+  it('should return 400 if no file is uploaded', async () => {
+    const res = await request(app).post('/upload').attach('product', '');
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('No file uploaded');
+  });
+});
+
+describe('POST /api/orders/create', () => {
+  it('should return 500 if an error occurs during order creation', async () => {
+    const orderCreateMock = jest.spyOn(Order, 'create').mockImplementation(() => Promise.reject(new Error('Order creation error')));
+    const res = await request(app)
+      .post('/api/orders/create')
+      .send({ userId: 1, cartItems: { '1-S': 1 }, totalAmount: 100 });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Internal server error');
+    orderCreateMock.mockRestore();
+  });
+});
+
+describe('fetchuser Middleware', () => {
+  it('should return 401 if no token is provided', async () => {
+    const res = await request(app).get('/me');
+    expect(res.status).toBe(401);
+    expect(res.body.errors).toBe("Please authenticate using a valid token");
+  });
+
+  it('should return 401 if token verification fails', async () => {
+    jwt.verify = jest.fn().mockImplementation(() => { throw new Error('Invalid token'); });
+    const res = await request(app).get('/me').set('Authorization', 'Bearer invalidtoken');
+    expect(res.status).toBe(401);
+    expect(res.body.errors).toBe("Invalid token");
+  });
+
+  it('should return 401 if user is not found', async () => {
+    jwt.verify = jest.fn().mockReturnValue({ user: { id: 1 } });
+    User.findOne = jest.fn().mockResolvedValue(null);
+    const res = await request(app).get('/me').set('Authorization', 'Bearer validtoken');
+    expect(res.status).toBe(401);
+    expect(res.body.errors).toBe("User not found");
+  });
+});
 
 
+describe('POST /api/orders/create', () => {
+
+  it('should return 500 if an error occurs during order item creation', async () => {
+    const productFindByPkMock = jest.spyOn(Product, 'findByPk').mockImplementation(() => Promise.reject(new Error('Product retrieval error')));
+    const res = await request(app)
+      .post('/api/orders/create')
+      .send({ userId: 1, cartItems: { '1-S': 1 }, totalAmount: 100 });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Internal server error');
+    productFindByPkMock.mockRestore();
+  });
+});
+
+
+describe('PUT /updateproductadmin/:id', () => {
+
+
+  it('should return 500 if an error occurs during product update', async () => {
+    const productFindByPkMock = jest.spyOn(Product, 'findByPk').mockImplementation(() => Promise.reject(new Error('Product retrieval error')));
+    const res = await request(app)
+      .put('/updateproductadmin/1')
+      .send({ name: 'UpdatedProduct', new_price: 90, old_price: 140, available: true })
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(res.status).toBe(500);
+    productFindByPkMock.mockRestore();
+  });
+});
+
+
+describe('GET /admin/dashboard', () => {
+  it('should return 401 if no token is provided', async () => {
+    const res = await request(app).get('/admin/dashboard');
+    expect(res.status).toBe(401);
+    expect(res.body.errors).toBe('Please authenticate using a valid token');
+  });
+
+  it('should return 401 if token verification fails', async () => {
+    jwt.verify = jest.fn().mockImplementation(() => { throw new Error('Invalid token'); });
+    const res = await request(app).get('/admin/dashboard').set('Authorization', 'Bearer invalidtoken');
+    expect(res.status).toBe(401);
+    expect(res.body.errors).toBe('Invalid token');
+  });
+
+  it('should return 403 if user is not an admin', async () => {
+    const user = { id: 1, is_admin: false };
+    jwt.verify = jest.fn().mockReturnValue({ user });
+    User.findOne = jest.fn().mockResolvedValue(user);
+
+    const res = await request(app).get('/admin/dashboard').set('Authorization', 'Bearer validtoken');
+    expect(res.status).toBe(403);
+    expect(res.body.errors).toBe('Access denied');
+  });
+
+});
+
+
+describe('POST /addtocart', () => {
+
+
+  it('should return 500 if an error occurs during cart update', async () => {
+    const user = { id: 1, cart_data: {} };
+    jwt.verify = jest.fn().mockReturnValue({ user: { id: 1 } });
+    User.findOne = jest.fn().mockResolvedValue(user);
+    User.update = jest.fn().mockImplementation(() => Promise.reject(new Error('Cart update error')));
+
+    const res = await request(app).post('/addtocart').send({ itemId: 1 }).set('Authorization', 'Bearer validtoken');
+    expect(res.status).toBe(500);
+    expect(res.body.message).toBe('Error adding item to cart');
+  });
+});
+
+describe('POST /removefromcart', () => {
+
+
+  it('should return 500 if an error occurs during cart update', async () => {
+    const user = { id: 1, cart_data: { item1: 1 } };
+    jwt.verify = jest.fn().mockReturnValue({ user: { id: 1 } });
+    User.findOne = jest.fn().mockResolvedValue(user);
+    User.update = jest.fn().mockImplementation(() => Promise.reject(new Error('Cart update error')));
+
+    const res = await request(app).post('/removefromcart').send({ itemId: 'item1' }).set('Authorization', 'Bearer validtoken');
+    expect(res.status).toBe(500);
+    expect(res.body.message).toBe('Internal Server Error');
+  });
+});
+
+
+describe('GET /search', () => {
+  it('should return 500 if an error occurs during search', async () => {
+    Product.findAll = jest.fn().mockImplementation(() => Promise.reject(new Error('Search error')));
+    const res = await request(app).get('/search').query({ query: 'Test' });
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Internal Server Error');
+  });
+});
+
+describe('Authorization Middleware', () => {
+  it('should return 401 if no token is provided', async () => {
+    const res = await request(app).get('/me');
+    expect(res.status).toBe(401);
+    expect(res.body.errors).toBe('Please authenticate using a valid token');
+  });
+
+
+
+  it('should return user data if a valid token is provided', async () => {
+    const token = jwt.sign({ user: { id: 1 } }, 'secret_ecom');
+    const user = await User.create({ id: 1, name: 'testuser', email: 'test@example.com', password: 'password' });
+
+    const res = await request(app).get('/me').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+  });
+});
+
+
+describe('Error Handling in Routes', () => {
+  it('should return 500 on database connection error', async () => {
+    const originalFunction = User.findByPk;
+    User.findByPk = jest.fn().mockRejectedValue(new Error('Database error'));
+
+    const res = await request(app).put('/users/1');
+    expect(res.status).toBe(500);
+    expect(res.text).toBe('Internal Server Error');
+
+    User.findByPk = originalFunction;
+  });
+
+  it('should return 500 on general server error', async () => {
+    const originalFunction = Product.findByPk;
+    Product.findByPk = jest.fn().mockRejectedValue(new Error('General error'));
+
+    const res = await request(app).put('/updateproductadmin/1');
+    expect(res.status).toBe(500);
+    expect(res.text).toBe('Internal Server Error');
+
+    Product.findByPk = originalFunction;
+  });
+});
+
+
+describe('Order Creation Route', () => {
+ 
+
+
+  it('should return 500 on error during order creation', async () => {
+    const originalFunction = Order.create;
+    Order.create = jest.fn().mockRejectedValue(new Error('Order creation error'));
+
+    const res = await request(app)
+      .post('/api/orders/create')
+      .send({ userId: 1, cartItems: { '1-1': 2 }, totalAmount: 200 });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Internal server error');
+
+    Order.create = originalFunction;
+  });
+});
+
+
+
+
+
+
+it('should return 500 if error occurs while deleting product', async () => {
+const originalFunction = Product.findByPk;
+Product.findByPk = jest.fn().mockRejectedValue(new Error('Product deletion error'));
+
+const res = await request(app).delete('/removeproduct/1');
+expect(res.status).toBe(500);
+
+Product.findByPk = originalFunction;
+});
+
+describe('Collection Routes', () => {
+
+
+it('should return 500 if error occurs while retrieving collections', async () => {
+const originalFunction = Collection.findAll;
+Collection.findAll = jest.fn().mockRejectedValue(new Error('Retrieve collections error'));
+
+const res = await request(app).get('/admincollections');
+expect(res.status).toBe(500);
+
+Collection.findAll = originalFunction;
+});
+});
+
+
+
+describe('Product Routes', () => {
+
+
+it('should return 500 if error occurs while retrieving products', async () => {
+const originalFunction = Product.findAll;
+Product.findAll = jest.fn().mockRejectedValue(new Error('Retrieve products error'));
+
+const res = await request(app).get('/allproducts');
+expect(res.status).toBe(500);
+
+Product.findAll = originalFunction;
+});
+});
+
+/////////////////
+it('should return 400 for too short username', async () => {
+  const res = await request(app).post('/signup').send({ username: 'ab', email: 'test@example.com', password: 'password123' });
+  expect(res.status).toBe(400);
+  expect(res.body.errors).toContain('Validation errors: username too short');
+});
+
+it('should return 400 for invalid email', async () => {
+  const res = await request(app).post('/signup').send({ username: 'testuser', email: 'invalid-email', password: 'password123' });
+  expect(res.status).toBe(400);
+  expect(res.body.errors).toContain('Validation errors: invalid email');
+});
+
+it('should return 400 for too short password', async () => {
+  const res = await request(app).post('/signup').send({ username: 'testuser', email: 'test@example.com', password: 'pwd' });
+  expect(res.status).toBe(400);
+  expect(res.body.errors).toContain('Validation errors: password too short');
+});
+
+it('should return 400 for missing name in product', async () => {
+  const res = await request(app).post('/addproduct').send({ category_id: 1, collection_id: 1, new_price: 100, old_price: 150 });
+  expect(res.status).toBe(400);
+  expect(res.body.message).toEqual("Invalid input. Required fields are missing or incorrect.");
+});
+
+it('should return 400 for invalid prices in product', async () => {
+  const res = await request(app).post('/addproduct').send({ name: 'TestProduct', category_id: 1, collection_id: 1, new_price: 'invalid', old_price: 'invalid' });
+  expect(res.status).toBe(400);
+  expect(res.body.message).toEqual("Invalid input. Required fields are missing or incorrect.");
+});
+it('should return 500 if an error occurs while adding a product', async () => {
+  jest.spyOn(Product, 'create').mockImplementation(() => {
+    throw new Error('Database error');
+  });
+
+  const res = await request(app).post('/addproduct').send({
+    name: 'TestProduct',
+    category_id: 1,
+    collection_id: 1,
+    new_price: 100,
+    old_price: 150,
+    image: 'test.jpg'
+  }).set('Authorization', `Bearer ${adminToken}`);
+
+  expect(res.status).toBe(500);
+});
+it('should return 401 if no token is provided', async () => {
+  const res = await request(app).get('/admin/dashboard');
+  expect(res.status).toBe(401);
+  expect(res.body.errors).toBe('Please authenticate using a valid token');
+});
+
+it('should return 401 if token verification fails', async () => {
+  jwt.verify = jest.fn().mockImplementation(() => { throw new Error('Invalid token'); });
+  const res = await request(app).get('/admin/dashboard').set('Authorization', 'Bearer invalidtoken');
+  expect(res.status).toBe(401);
+  expect(res.body.errors).toBe('Invalid token');
+});
+
+it('should return 403 if user is not an admin', async () => {
+  const user = { id: 1, is_admin: false };
+  jwt.verify = jest.fn().mockReturnValue({ user });
+  User.findOne = jest.fn().mockResolvedValue(user);
+
+  const res = await request(app).get('/admin/dashboard').set('Authorization', 'Bearer validtoken');
+  expect(res.status).toBe(403);
+  expect(res.body.errors).toBe('Access denied');
+});
 
