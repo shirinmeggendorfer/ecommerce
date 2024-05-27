@@ -890,7 +890,7 @@ app.get("/newcollections", async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
+/*
 // STARTSEITE
 app.get("/allproducts", async (req, res) => {
   try {
@@ -903,6 +903,28 @@ app.get("/allproducts", async (req, res) => {
     res.status(500).send('Interner Serverfehler');
   }
 });
+*/
+
+app.get("/allproducts", async (req, res) => {
+  try {
+    const { category } = req.query;
+    let filter = {};
+    if (category) {
+      const categoryObj = await Category.findOne({ where: { name: category } });
+      if (categoryObj) {
+        filter.category_id = categoryObj.id;
+      } else {
+        return res.status(404).send('Category not found');
+      }
+    }
+    const products = await Product.findAll({ where: filter });
+    res.json(products);
+  } catch (error) {
+    console.error('Fehler beim Abrufen aller Produkte:', error);
+    res.status(500).send('Interner Serverfehler');
+  }
+});
+
 
 
 
