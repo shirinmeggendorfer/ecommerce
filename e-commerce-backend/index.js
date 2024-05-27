@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
+require('dotenv').config();
 
 app.use(express.json());
 app.use(cors({
@@ -247,7 +248,6 @@ server.on('error', (error) => {
   }
 });
 
-module.exports = { app, sequelize, Category, Collection, Product, Coupon, Order, OrderItem, User };
 
 
 // Image Storage Engine 
@@ -282,54 +282,42 @@ app.use('/images', express.static(path.join(__dirname, 'upload/images')));
 
   
  
-
-// MiddleWare to fetch user from database
+// Middleware to fetch user from database
 const fetchuser = async (req, res, next) => {
-  const authHeader = req.header("Authorization");
-  console.log("Authorization Header:", authHeader); // Log the received auth header
-
-  const token = authHeader && authHeader.split(' ')[1]; // Extract token
+  const authHeader = req.header('Authorization');
+  const token = authHeader && authHeader.split(' ')[1];
   if (!token) {
-    console.error("No token provided");
-    return res.status(401).send({ errors: "Please authenticate using a valid token" });
+    return res.status(401).send({ errors: 'Please authenticate using a valid token' });
   }
-
   try {
-    const data = jwt.verify(token, "secret_ecom");
+    const data = jwt.verify(token, 'secret_ecom');
     req.user = await User.findOne({ where: { id: data.user.id } });
     if (!req.user) {
-      console.error("User not found with provided token");
-      return res.status(401).send({ errors: "User not found" });
+      return res.status(401).send({ errors: 'User not found' });
     }
     next();
   } catch (error) {
-    console.error("Token verification error:", error);
-    return res.status(401).send({ errors: "Invalid token" });
+    return res.status(401).send({ errors: 'Invalid token' });
   }
 };
 
 
 // Middleware to check if the user is an admin
 const fetchAdmin = async (req, res, next) => {
-  const authHeader = req.header("Authorization");
-  const token = authHeader && authHeader.split(' ')[1]; // Extract token
-
+  const authHeader = req.header('Authorization');
+  const token = authHeader && authHeader.split(' ')[1];
   if (!token) {
-    return res.status(401).send({ errors: "Please authenticate using a valid token" });
+    return res.status(401).send({ errors: 'Please authenticate using a valid token' });
   }
-
   try {
-    const data = jwt.verify(token, "secret_ecom");
-    console.log("Decoded token data:", data); // Log decoded token data
+    const data = jwt.verify(token, 'secret_ecom');
     req.user = await User.findOne({ where: { id: data.user.id } });
     if (!req.user || !req.user.is_admin) {
-      console.error("Access denied. Admins only.");
-      return res.status(403).send({ errors: "Access denied" });
+      return res.status(403).send({ errors: 'Access denied' });
     }
     next();
   } catch (error) {
-    console.error("Token verification error:", error);
-    return res.status(401).send({ errors: "Invalid token" });
+    return res.status(401).send({ errors: 'Invalid token' });
   }
 };
 
@@ -338,28 +326,18 @@ const fetchAdmin = async (req, res, next) => {
 
 //ADMINCHECK
 app.get('/admin/dashboard', fetchAdmin, (req, res) => {
-  try {
-    res.json({ message: 'Welcome to the Admin Dashboard' });
-  } catch (error) {
-    res.status(500).json({ errors: 'Internal Server Error' });
-  }
-  
+  res.json({ message: 'Welcome to the Admin Dashboard' });
 });
 
-app.get('/me', fetchuser, async (req, res) => {
-  try {
-    res.json({ id: req.user.id, email: req.user.email, is_admin: req.user.is_admin });
-  } catch (error) {
-    console.error('Error fetching user data:', error);
-    res.status(500).send('Internal Server Error');
-  }
+app.get('/me', fetchuser, (req, res) => {
+  res.json({ id: req.user.id, email: req.user.email, is_admin: req.user.is_admin });
 });
 
 app.put('/users/:id', async (req, res) => {
   try {
     const user = await User.findByPk(req.params.id);
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
     user.is_admin = true;
     await user.save();
@@ -371,122 +349,73 @@ app.put('/users/:id', async (req, res) => {
 
 
 
+
 //ZUSATZ: ORDERS 
 app.post('/api/orders/create', async (req, res) => {
   const { userId, cartItems, totalAmount } = req.body;
-
-  console.log('Order creation request received:', { userId, cartItems, totalAmount });
-
   try {
-    // Create a new order
-    const order = await Order.create({
-      user_id: userId,
-      total_amount: totalAmount,
-      status: 'Pending'
-    });
-
-    // Create order items
+    const order = await Order.create({ user_id: userId, total_amount: totalAmount, status: 'Pending' });
     const orderItems = await Promise.all(Object.keys(cartItems).map(async key => {
       const [productId, size] = key.split('-');
       const quantity = cartItems[key];
       const product = await Product.findByPk(productId);
-
       if (product) {
-        const orderItem = await OrderItem.create({
-          order_id: order.id,
-          product_id: product.id,
-          quantity: quantity,
-          price: product.new_price
-        });
-        return orderItem;
-      } else {
-        console.error('Product not found:', productId);
+        return await OrderItem.create({ order_id: order.id, product_id: product.id, quantity, price: product.new_price });
       }
     }));
-
     res.status(201).json({ order, orderItems });
   } catch (error) {
-    console.error('Error creating order:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 
 
-app.post('/getuser', fetchuser, async (req, res) => {
-  try {
-    res.status(200).json(req.user);
-  } catch (error) {
-    console.error('Error fetching user data:', error);
-    res.status(500).send('Internal Server Error');
-  }
+app.post('/getuser', fetchuser, (req, res) => {
+  res.status(200).json(req.user);
 });
 
-
-// FEATURE #1 : REGISTRIERUNG
 app.post('/signup', async (req, res) => {
   try {
-    if (req.body.username.length < 3) {
-      return res.status(400).json({ success: false, errors: "Validation errors: username too short" });
+    const { username, email, password } = req.body;
+    if (username.length < 3 || !email.includes('@') || password.length < 6) {
+      return res.status(400).json({ success: false, errors: 'Validation errors' });
     }
-    if (!req.body.email.includes("@")) {
-      return res.status(400).json({ success: false, errors: "Validation errors: invalid email" });
-    }
-    if (req.body.password.length < 6) {
-      return res.status(400).json({ success: false, errors: "Validation errors: password too short" });
-    }
-
-    const existingUser = await User.findOne({ where: { email: req.body.email } });
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ success: false, errors: "Ein Benutzer mit dieser E-Mail existiert bereits" });
+      return res.status(400).json({ success: false, errors: 'Ein Benutzer mit dieser E-Mail existiert bereits' });
     }
-
-    const newUser = await User.create({
-      name: req.body.username,
-      email: req.body.email,
-      password: req.body.password
-    });
-
-    const tokenData = { user: { id: newUser.id } };
-    const token = jwt.sign(tokenData, 'secret_ecom');
-    res.status(200).json({ success: true, token, user: { id: newUser.id } }); // Antwort geändert
+    const newUser = await User.create({ name: username, email, password });
+    const token = jwt.sign({ user: { id: newUser.id } }, 'secret_ecom');
+    res.status(200).json({ success: true, token, user: { id: newUser.id } });
   } catch (error) {
     res.status(500).send('Interner Serverfehler');
   }
 });
 
 
-
-
-// FEATURE #2 : LOGIN
 app.post('/login', async (req, res) => {
   try {
     const user = await User.findOne({ where: { email: req.body.email } });
     if (user && user.password === req.body.password) {
-      const tokenData = { user: { id: user.id } };
-      const token = jwt.sign(tokenData, 'secret_ecom');
+      const token = jwt.sign({ user: { id: user.id } }, 'secret_ecom');
       res.json({ success: true, token });
     } else {
-      res.status(400).json({ success: false, errors: "Bitte überprüfen Sie Ihre E-Mail-Adresse und Ihr Passwort" });
+      res.status(400).json({ success: false, errors: 'Bitte überprüfen Sie Ihre E-Mail-Adresse und Ihr Passwort' });
     }
   } catch (error) {
     res.status(500).send('Interner Serverfehler');
   }
 });
 
-// FEATURE #2 : ADMIN LOGIN
 app.post('/adminlogin', async (req, res) => {
   try {
     const user = await User.findOne({ where: { email: req.body.email } });
-    if (user && user.password === req.body.password) {
-      if (!user.is_admin) {
-        return res.status(403).json({ success: false, errors: "Access denied. Admins only." });
-      }
-      const tokenData = { user: { id: user.id, is_admin: user.is_admin } };
-      const token = jwt.sign(tokenData, 'secret_ecom');
+    if (user && user.password === req.body.password && user.is_admin) {
+      const token = jwt.sign({ user: { id: user.id, is_admin: user.is_admin } }, 'secret_ecom');
       res.json({ success: true, token });
     } else {
-      res.status(400).json({ success: false, errors: "Bitte überprüfen Sie Ihre E-Mail-Adresse und Ihr Passwort" });
+      res.status(403).json({ success: false, errors: 'Bitte überprüfen Sie Ihre E-Mail-Adresse und Ihr Passwort' });
     }
   } catch (error) {
     res.status(500).send('Interner Serverfehler');
@@ -494,99 +423,63 @@ app.post('/adminlogin', async (req, res) => {
 });
 
 
-
-// FEATURE #2 : LOGOUT
 app.post('/logout', fetchuser, async (req, res) => {
   try {
     await User.update({ cart_data: {} }, { where: { id: req.user.id } });
-    res.send({ success: true, message: "Logged out and cart cleared" });
+    res.send({ success: true, message: 'Logged out and cart cleared' });
   } catch (error) {
-    console.error("Logout error:", error);
-    res.status(500).send({ message: "Internal Server Error" });
+    res.status(500).send({ message: 'Internal Server Error' });
   }
 });
 
-// FEATURE #3 : EINKAUF
 app.post('/addtocart', fetchuser, async (req, res) => {
   try {
     const user = await User.findOne({ where: { id: req.user.id } });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
     user.cart_data = user.cart_data || {};
     user.cart_data[req.body.itemId] = (user.cart_data[req.body.itemId] || 0) + 1;
     await User.update({ cart_data: user.cart_data }, { where: { id: req.user.id } });
-
-    res.json({ message: "Item added successfully", cartData: user.cart_data });
+    res.json({ message: 'Item added successfully', cartData: user.cart_data });
   } catch (error) {
-    res.status(500).send({ message: "Error adding item to cart", error: error.toString() });
+    res.status(500).send({ message: 'Error adding item to cart', error: error.toString() });
   }
 });
 
-// FEATURE #3 : EINKAUF
-app.post('/removefromcart', cors(), fetchuser, async (req, res) => {
+app.post('/removefromcart', fetchuser, async (req, res) => {
   try {
     const { itemId, removeAll } = req.body;
-    let user = await User.findOne({ where: { id: req.user.id } });
+    const user = await User.findOne({ where: { id: req.user.id } });
     if (!user || !user.cart_data) {
       return res.status(404).json({ message: 'User or cart not found.' });
     }
-
     if (removeAll || user.cart_data[itemId] <= 1) {
       delete user.cart_data[itemId];
     } else {
       user.cart_data[itemId] -= 1;
     }
-
     await User.update({ cart_data: user.cart_data }, { where: { id: req.user.id } });
     res.json({ success: true, cartData: user.cart_data });
   } catch (error) {
-    console.error("Error modifying cart:", error);
-    res.status(500).send({ message: "Internal Server Error" });
+    res.status(500).send({ message: 'Internal Server Error' });
   }
 });
 
-// FEATURE #3 : EINKAUF
-async function updateCartItem(userId, itemId, removeAll) {
-  // Finde den Benutzer und aktualisiere den Warenkorb entsprechend
-  let user = await User.findOne({ where: { id: userId } });
-  if (!user || !user.cart_data) return null;
-
-  if (removeAll || user.cart_data[itemId] <= 1) {
-    delete user.cart_data[itemId];
-  } else {
-    user.cart_data[itemId] -= 1;
-  }
-
-  // Aktualisiere den Benutzer in der Datenbank
-  await User.update({ cart_data: user.cart_data }, { where: { id: userId } });
-
-  return user.cart_data;
-}
-
-
-// FEATURE #3 : EINKAUF
 app.post('/getcart', fetchuser, async (req, res) => {
-  console.log("Get Cart");
-  let user = await User.findOne({ where: { id: req.user.id } });
+  const user = await User.findOne({ where: { id: req.user.id } });
   if (!user) {
-    return res.status(404).send("User not found");
+    return res.status(404).send('User not found');
   }
   res.json(user.cart_data || {});
 });
 
-
-// FEATURE #4 : PRODUCTSUCHE
+// Product search
 app.get('/search', async (req, res) => {
   try {
     const { query } = req.query;
     const products = await Product.findAll({
-      where: {
-        name: {
-          [Sequelize.Op.like]: `%${query}%` 
-        }
-      }
+      where: { name: { [Sequelize.Op.like]: `%${query}%` } }
     });
     res.json(products);
   } catch (error) {
@@ -594,219 +487,165 @@ app.get('/search', async (req, res) => {
   }
 });
 
-
-// FEATURE #5 : KATEGORIE HINZUFÜGEN
+// Admin category routes
 app.post('/adminaddcategory', async (req, res) => {
   try {
     const { name } = req.body;
     const category = await Category.create({ name });
     res.json({ success: true, category });
   } catch (error) {
-    console.error("Error adding category:", error);
     res.status(500).send({ success: false, message: error.message });
   }
 });
 
-// FEATURE #6 : KATEGORIE BEARBEITEN
 app.put('/adminupdatecategory/:id', async (req, res) => {
   try {
     const { name } = req.body;
     if (name.length > 255) {
-      return res.status(400).send({ message: "Validation error" });
+      return res.status(400).send({ message: 'Validation error' });
     }
-    const category = await Category.update({ name }, {
-      where: { id: req.params.id }
-    });
+    const category = await Category.update({ name }, { where: { id: req.params.id } });
     res.json({ success: true, category });
   } catch (error) {
-    console.error("Error updating category:", error);
-    res.status(500).send({ message: "Server error" });
+    res.status(500).send({ message: 'Server error' });
   }
 });
 
-// FEATURE #7 : KATEGORIE LÖSCHEN
 app.delete('/admindeletecategory/:id', async (req, res) => {
   try {
-    const id = req.params.id;
-    if (isNaN(id)) {
-      return res.status(400).send({ message: "Invalid category ID" });
-    }
-    await Category.destroy({
-      where: { id }
-    });
+    await Category.destroy({ where: { id: req.params.id } });
     res.json({ success: true, message: 'Category deleted' });
   } catch (error) {
-    console.error("Error deleting category:", error);
-    res.status(500).send({ message: "Server error" });
+    res.status(500).send({ message: 'Server error' });
   }
 });
 
-// FEATURE #8 : KATEGORIE AUFLISTEN
 app.get('/admincategories', async (req, res) => {
   try {
     const categories = await Category.findAll();
     res.json(categories);
   } catch (error) {
-    console.error('Error fetching categories:', error);
     res.status(500).send('Internal Server Error');
   }
 });
 
-// FEATURE #9 : COLLECTION HINZUFÜGEN
+// Admin collection routes
 app.post('/adminaddcollection', async (req, res) => {
   try {
     const { name } = req.body;
     const collection = await Collection.create({ name });
     res.json({ success: true, collection });
   } catch (error) {
-    console.error("Error adding collection:", error);
     res.status(500).send({ success: false, message: error.message });
   }
 });
 
-// FEATURE #10 : COLLECTION BEARBEITEN
 app.put('/adminupdatecollection/:id', async (req, res) => {
   try {
     const { name } = req.body;
-    const collection = await Collection.update({ name }, {
-      where: { id: req.params.id }
-    });
+    const collection = await Collection.update({ name }, { where: { id: req.params.id } });
     res.json({ success: true, collection });
   } catch (error) {
-    console.error("Error updating collection:", error);
     res.status(500).send({ success: false, message: error.message });
   }
 });
 
-// FEATURE #11 : COLLECTION LÖSCHEN
 app.delete('/admindeletecollection/:id', async (req, res) => {
   try {
-    const id = req.params.id;
-    await Collection.destroy({
-      where: { id }
-    });
-    res.json({ success: true, message: 'collection deleted' });
+    await Collection.destroy({ where: { id: req.params.id } });
+    res.json({ success: true, message: 'Collection deleted' });
   } catch (error) {
-    console.error("Error deleting collection:", error);
     res.status(500).send({ success: false, message: error.message });
   }
 });
 
-
-
-// FEATURE #12 : COLLECTION AUFLISTEN
 app.get('/admincollections', async (req, res) => {
   try {
-    // Abrufen aller Collections aus der Datenbank
     const collections = await Collection.findAll();
-    console.log("All Collections:", collections);
     res.send(collections);
   } catch (error) {
-    console.error('Fehler beim Abrufen aller Collections:', error);
-    res.status(500).send('Interner Serverfehler');
+    res.status(500).send('Internal Server Error');
   }
 });
 
-// FEATURE #13 : COUPON HINZUFÜGEN
+// Admin coupon routes
 app.post('/adminaddcoupon', async (req, res) => {
   try {
     const { name, amount, available } = req.body;
     if (!name || amount === undefined || available === undefined) {
-      return res.status(400).send({ message: "Validation error" });
+      return res.status(400).send({ message: 'Validation error' });
     }
     const coupon = await Coupon.create({ name, amount, available });
     res.json({ success: true, coupon });
   } catch (error) {
-    console.error("Error adding coupon:", error);
     res.status(500).send({ success: false, message: error.message });
   }
 });
 
-// FEATURE #14 : COUPON BEARBEITEN
 app.put('/adminupdatecoupon/:id', async (req, res) => {
   try {
     const { name, amount, available } = req.body;
     if (amount < 0 || available === undefined) {
-      return res.status(400).send({ message: "Validation error" });
+      return res.status(400).send({ message: 'Validation error' });
     }
-    const coupon = await Coupon.update({ name, amount, available }, {
-      where: { id: req.params.id }
-    });
+    const coupon = await Coupon.update({ name, amount, available }, { where: { id: req.params.id } });
     res.json({ success: true, coupon });
   } catch (error) {
-    console.error("Error updating coupon:", error);
-    res.status(500).send({ message: "Server error" });
+    res.status(500).send({ message: 'Server error' });
   }
 });
 
-// FEATURE #15 : COUPON LÖSCHEN
 app.delete('/admindeletecoupon/:id', async (req, res) => {
   try {
-    const id = req.params.id;
-    await Coupon.destroy({
-      where: { id }
-    });
+    await Coupon.destroy({ where: { id: req.params.id } });
     res.json({ success: true, message: 'Coupon deleted' });
   } catch (error) {
-    console.error("Error deleting coupon:", error);
-    res.status(500).send({ message: "Server error" });
+    res.status(500).send({ message: 'Server error' });
   }
 });
 
-// FEATURE #16 : COUPON AUFLISTEN
 app.get('/admincoupons', async (req, res) => {
   try {
     const coupons = await Coupon.findAll();
     res.json(coupons);
   } catch (error) {
-    console.error('Error fetching coupons:', error);
     res.status(500).send('Internal Server Error');
   }
 });
 
-
-// FEATURE #17 : PRODUKTE AUFLISTEN
-app.get("/allproductsadmin", async (req, res) => {
+// Product routes
+app.get('/allproductsadmin', async (req, res) => {
   try {
     const category = req.query.category;
     let filter = {};
     if (category) {
       filter.category = category;
     }
-    const products = await Product.findAll({
-      where: filter
-    });
+    const products = await Product.findAll({ where: filter });
     res.json(products);
   } catch (error) {
-    console.error('Fehler beim Abrufen der Produkte:', error);
-    res.status(500).send('Interner Serverfehler');
-  }
-});
-
-
-
-// FEATURE #18 : PRODUKTE ANZEIGEN
-app.get("/productadmin/:id", async (req, res) => {
-  try {
-    const product = await Product.findByPk(req.params.id);
-    if (!product) {
-      return res.status(404).send({ message: "Product not found" });
-    }
-    res.json(product);
-  } catch (error) {
-    console.error('Error retrieving product:', error);
     res.status(500).send('Internal Server Error');
   }
 });
 
-// FEATURE #17 : PRODUKTE BEARBEITEN
-app.put("/updateproductadmin/:id", upload.single('product'), async (req, res) => {
+app.get('/productadmin/:id', async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.id);
     if (!product) {
-      return res.status(404).send({ message: "Product not found" });
+      return res.status(404).send({ message: 'Product not found' });
     }
+    res.json(product);
+  } catch (error) {
+    res.status(500).send('Internal Server Error');
+  }
+});
 
+app.put('/updateproductadmin/:id', upload.single('product'), async (req, res) => {
+  try {
+    const product = await Product.findByPk(req.params.id);
+    if (!product) {
+      return res.status(404).send({ message: 'Product not found' });
+    }
     const updatedData = {
       name: req.body.name,
       category_id: req.body.category_id,
@@ -815,51 +654,38 @@ app.put("/updateproductadmin/:id", upload.single('product'), async (req, res) =>
       old_price: req.body.old_price,
       available: req.body.available,
     };
-
     if (req.file) {
-      updatedData.image = `/images/${req.file.filename}`; // Use the URL from the upload response
+      updatedData.image = `/images/${req.file.filename}`;
     }
-
     const updatedProduct = await product.update(updatedData);
     res.json({ success: true, product: updatedProduct });
   } catch (error) {
-    console.error('Error updating product:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.post('/addproduct', async (req, res) => {
+  try {
+    const { name, category_id, collection_id, new_price, old_price, image } = req.body;
+    if (!name || !category_id || isNaN(parseInt(category_id)) || !collection_id || isNaN(parseInt(collection_id)) || isNaN(parseFloat(new_price)) || isNaN(parseFloat(old_price))) {
+      return res.status(400).json({ success: false, message: 'Invalid input. Required fields are missing or incorrect.' });
+    }
+    const product = await Product.create({
+      name,
+      image,
+      category_id: parseInt(category_id),
+      collection_id: parseInt(collection_id),
+      new_price: parseFloat(new_price),
+      old_price: parseFloat(old_price),
+      available: true
+    });
+    res.json({ success: true, product });
+  } catch (error) {
     res.status(500).send('Internal Server Error');
   }
 });
 
 
-
-
-// FEATURE #19 : PRODUKTE HINZUFÜGEN
-app.post("/addproduct", async (req, res) => {
-  try {
-    const { name, category_id, collection_id, new_price, old_price, image } = req.body;
-
-    // Prüfen, ob die erforderlichen Felder vorhanden und korrekt sind
-    if (!name || !category_id || isNaN(parseInt(category_id)) || !collection_id || isNaN(parseInt(collection_id)) || isNaN(parseFloat(new_price)) || isNaN(parseFloat(old_price))) {
-      return res.status(400).json({ success: false, message: "Invalid input. Required fields are missing or incorrect." });
-    }
-
-    // Konvertieren von Daten, um sicherzustellen, dass sie den korrekten Typ haben
-    const product = await Product.create({
-      name,
-      image: image,  // Verwenden Sie den übergebenen Bildpfad
-      category_id: parseInt(category_id),
-      collection_id: parseInt(collection_id),
-      new_price: parseFloat(new_price),
-      old_price: parseFloat(old_price),
-      available: true // oder andere Logik zur Bestimmung der Verfügbarkeit
-    });
-
-    res.json({ success: true, product });
-  } catch (error) {
-    console.error("Failed to add product:", error);
-    res.status(500).send("Internal Server Error");
-  }
-});
-
-// FEATURE #20 : PRODUKTE LÖSCHEN
 app.delete("/removeproduct/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -876,36 +702,16 @@ app.delete("/removeproduct/:id", async (req, res) => {
   }
 });
 
-
-
-// STARTSEITE
-app.get("/newcollections", async (req, res) => {
+app.get('/newcollections', async (req, res) => {
   try {
-    let products = await Product.findAll({
-      limit: 8  // Anpassung, um nur eine bestimmte Anzahl von Produkten zurückzugeben
-    });
-    console.log("New Collections:", products);
+    const products = await Product.findAll({ limit: 8 });
     res.send(products);
   } catch (error) {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-/*
-// STARTSEITE
-app.get("/allproducts", async (req, res) => {
-  try {
-    // Abrufen aller Produkte aus der Datenbank
-    const products = await Product.findAll();
-    console.log("All Products:", products);
-    res.send(products);
-  } catch (error) {
-    console.error('Fehler beim Abrufen aller Produkte:', error);
-    res.status(500).send('Interner Serverfehler');
-  }
-});
-*/
 
-app.get("/allproducts", async (req, res) => {
+app.get('/allproducts', async (req, res) => {
   try {
     const { category } = req.query;
     let filter = {};
@@ -920,33 +726,24 @@ app.get("/allproducts", async (req, res) => {
     const products = await Product.findAll({ where: filter });
     res.json(products);
   } catch (error) {
-    console.error('Fehler beim Abrufen aller Produkte:', error);
-    res.status(500).send('Interner Serverfehler');
+    res.status(500).send('Internal Server Error');
   }
 });
 
-
-
-
-// STARTSEITE
-app.get("/popularinwomen", async (req, res) => {
+app.get('/popularinwomen', async (req, res) => {
   try {
-    // Abrufen aller Produkte aus der Datenbank, die zur Kategorie "women" gehören
     const products = await Product.findAll({
-      where: {
-        category_id: 2
-      },
-      limit: 4 // Begrenzen Sie die Anzahl der zurückgegebenen Produkte auf 4
+      where: { category_id: 2 },
+      limit: 4
     });
-
-    console.log("Popular In Women:", products);
     res.send(products);
   } catch (error) {
-    console.error('Fehler beim Abrufen der beliebtesten Produkte für Frauen:', error);
-    res.status(500).send('Interner Serverfehler');
+    res.status(500).send('Internal Server Error');
   }
 });
 
+
+module.exports = { app, sequelize, Category, Collection, Product, Coupon, Order, OrderItem, User };
 
 
 

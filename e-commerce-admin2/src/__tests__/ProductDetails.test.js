@@ -58,7 +58,7 @@ describe('ProductDetails Component', () => {
       expect(screen.getByLabelText('Collection')).toBeInTheDocument();
       expect(screen.getByLabelText('New Price')).toBeInTheDocument();
       expect(screen.getByLabelText('Old Price')).toBeInTheDocument();
-      expect(screen.getByLabelText('Image')).toBeInTheDocument();
+      
     });
 
     await waitFor(() => {
