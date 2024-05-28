@@ -23,12 +23,20 @@ beforeAll(async () => {
   server = app.listen(4002, () => {
     console.log('Server Running on port 4002');
   });
+
+
+server = app.listen(5064, () => {
+  console.log('Test Server Running on port 5064');
 });
+});
+
+
 
 afterAll(async () => {
   await sequelize.close();
   server.close();
 });
+
 
 describe('API Endpoints', () => {
   it('should sign up a new user', async () => {

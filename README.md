@@ -20,7 +20,7 @@ Admin:
 - run " docker exec -it   ecommerce-admin-1  npm test "
 
 Backend:
-- run " docker exec -it ecommerce-backend-1 npx jest --coverage --detectOpenHandles "
+- run " docker exec -it ecommerce-backend-1 npx jest --coverage"
 
 
 // Aufsetzen DB 

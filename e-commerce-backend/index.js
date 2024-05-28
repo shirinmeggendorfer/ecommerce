@@ -235,18 +235,23 @@ sequelize.authenticate()
     console.error('Fehler bei der Verbindung zur Datenbank:', err);
   });
 
-const server = app.listen(isTestEnvironment ? jestPort : expressPort, () => {
-  console.log(`Server Running on port ${isTestEnvironment ? jestPort : expressPort}`);
-});
+let server;
+if (!isTestEnvironment) {
+  server = app.listen(expressPort, () => {
+    console.log(`Server Running on port ${expressPort}`);
+  });
 
-server.on('error', (error) => {
-  if (error.code === 'EADDRINUSE') {
-    console.error(`Port ${isTestEnvironment ? jestPort : expressPort} is already in use`);
-    process.exit(1);
-  } else {
-    console.error('Server error:', error);
-  }
-});
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Port ${expressPort} is already in use`);
+      process.exit(1);
+    } else {
+      console.error('Server error:', error);
+    }
+  });
+}
+
+module.exports = { app, sequelize, Category, Collection, Product, Coupon, Order, OrderItem, User, server };
 
 
 
@@ -742,8 +747,6 @@ app.get('/popularinwomen', async (req, res) => {
   }
 });
 
-
-module.exports = { app, sequelize, Category, Collection, Product, Coupon, Order, OrderItem, User };
 
 
 
