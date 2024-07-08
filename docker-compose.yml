@@ -6,7 +6,7 @@ networks:
 
 volumes:
   postgres_data:
-  
+
 services:
   postgres:
     image: postgres:13
@@ -42,8 +42,6 @@ services:
       - ./e-commerce-backend:/app  
       - ./e-commerce-backend/upload:/e-commerce-backend/upload 
     command: /bin/sh -c "chmod -R 777 /e-commerce-backend/upload && npm run start"
-    
-
 
   frontend:
     build: ./e-commerce-frontend
@@ -53,7 +51,6 @@ services:
       - "3000:3000"
     depends_on:
       - backend
-
 
   admin:
     build: ./e-commerce-admin2
@@ -67,3 +64,14 @@ services:
       - PORT=3005
       - REACT_APP_BACKEND_URL=http://backend:4000
 
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile.backup
+    networks:
+      - mynet
+    volumes:
+      - ./e-commerce-backend:/e-commerce-backend
+    entrypoint: ["/bin/sh", "-c", "echo '* * * * * /backup_db.sh' | crontab - && crond -f"]
+    depends_on:
+      - postgres

@@ -1,0 +1,9 @@
+FROM alpine:latest
+
+RUN apk add --no-cache bash postgresql-client
+
+COPY backup_db.sh /backup_db.sh
+
+RUN chmod +x /backup_db.sh
+
+CMD ["crond", "-f"]

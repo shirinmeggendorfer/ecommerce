@@ -381,6 +381,7 @@ COPY public.order_items (id, order_id, product_id, quantity, price) FROM stdin;
 5	4	1	1	49.99
 6	4	2	1	29.99
 7	5	1	4	49.99
+8	6	1	1	49.99
 \.
 
 
@@ -394,6 +395,7 @@ COPY public.orders (id, user_id, total_amount, status) FROM stdin;
 3	1	93.98	Pending
 4	1	79.98	Pending
 5	1	199.96	Pending
+6	2	49.99	Pending
 \.
 
 
@@ -414,11 +416,11 @@ COPY public.products (id, name, image, category_id, collection_id, new_price, ol
 --
 
 COPY public.users (id, name, email, password, cart_data, date, is_admin, "createdAt", "updatedAt") FROM stdin;
-2	admin	admin@admin.com	admin	\N	2024-05-06 15:29:57.13414	t	2024-05-27 07:57:34.51772	2024-05-27 07:57:34.51772
 3	beispiel	beispiel3@beispiel.com	beispiel	\N	2024-05-06 15:29:57.13414	t	2024-05-27 07:57:34.51772	2024-05-27 07:57:34.51772
 4	beispiel4	beispiel4@beispiel.com	beispiel	\N	2024-05-06 15:29:57.13414	t	2024-05-27 07:57:34.51772	2024-05-27 07:57:34.51772
 5	beispiel	beispiel@beispiel.com	beispiel	\N	2024-05-06 15:29:57.13414	t	2024-05-27 07:57:34.51772	2024-05-27 07:57:34.51772
 1	TestUser	test@test.com	test1234	{}	2024-05-06 15:29:57.132183	f	2024-05-27 07:57:34.51772	2024-05-30 10:39:12.676
+2	admin	admin@admin.com	admin	{"1": 1}	2024-05-06 15:29:57.13414	t	2024-05-27 07:57:34.51772	2024-07-07 14:05:48.226
 \.
 
 
@@ -447,14 +449,14 @@ SELECT pg_catalog.setval('public.coupons_id_seq', 2, true);
 -- Name: order_items_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.order_items_id_seq', 7, true);
+SELECT pg_catalog.setval('public.order_items_id_seq', 8, true);
 
 
 --
 -- Name: orders_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.orders_id_seq', 5, true);
+SELECT pg_catalog.setval('public.orders_id_seq', 6, true);
 
 
 --
